@@ -95,16 +95,16 @@ namespace Runic.Dotnet
                 }
                 List<MemberRefTableRow> _rows = new List<MemberRefTableRow>();
                 public MemberRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public uint Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, ushort parentToken)
+                public MemberRefTableRow Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, ushort parentToken)
                 {
                     lock (this)
                     {
                         MemberRefTableRow row = new MemberRefTableRow((uint)(_rows.Count + 1), name, signature, parentToken);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
-                internal MemberRefTable()
+                public MemberRefTable()
                 {
                 }
 

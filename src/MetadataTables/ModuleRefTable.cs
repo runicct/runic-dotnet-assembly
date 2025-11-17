@@ -74,12 +74,13 @@ namespace Runic.Dotnet
                         binaryWriter.Write(_name.Index);
                     }
                 }
-                public uint Add(Heap.StringHeap.String name)
+                public ModuleRefTableRow Add(Heap.StringHeap.String name)
                 {
                     lock (this)
                     {
-                        _rows.Add(new ModuleRefTableRow((uint)(_rows.Count + 1), name));
-                        return (uint)_rows.Count;
+                        ModuleRefTableRow row = new ModuleRefTableRow((uint)(_rows.Count + 1), name);
+                        _rows.Add(row);
+                        return row;
                     }
                 }
                 internal override void Save(BinaryWriter binaryWriter)
@@ -89,7 +90,7 @@ namespace Runic.Dotnet
                         _rows[n].Serialize(binaryWriter);
                     }
                 }
-                internal ModuleRefTable()
+                public ModuleRefTable()
                 {
                 }
                 internal ModuleRefTable(uint rows, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)

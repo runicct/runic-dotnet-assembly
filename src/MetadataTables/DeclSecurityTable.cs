@@ -86,12 +86,13 @@ namespace Runic.Dotnet
                         binaryWriter.Write(_permissionSet.Index);
                     }
                 }
-                public uint Add(ushort action, Heap.BlobHeap.Blob permissionSet)
+                public DeclSecurityTableRow Add(ushort action, Heap.BlobHeap.Blob permissionSet)
                 {
                     lock (this)
                     {
-                        _rows.Add(new DeclSecurityTableRow((uint)(_rows.Count + 1), action, permissionSet));
-                        return (uint)_rows.Count;
+                        DeclSecurityTableRow row = new DeclSecurityTableRow((uint)(_rows.Count + 1), action, permissionSet);
+                        _rows.Add(row);
+                        return row;
                     }
                 }
                 internal override void Save(BinaryWriter binaryWriter)

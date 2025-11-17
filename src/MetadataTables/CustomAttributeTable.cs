@@ -86,12 +86,13 @@ namespace Runic.Dotnet
                         binaryWriter.Write(_value.Index);
                     }
                 }
-                public uint Add(ushort hasCustomAttributeToken, ushort constructorToken, Heap.BlobHeap.Blob value)
+                public CustomAttributeTableRow Add(ushort hasCustomAttributeToken, ushort constructorToken, Heap.BlobHeap.Blob value)
                 {
                     lock (this)
                     {
-                        _rows.Add(new CustomAttributeTableRow((uint)(_rows.Count + 1), hasCustomAttributeToken, constructorToken, value));
-                        return (uint)_rows.Count;
+                        CustomAttributeTableRow row = new CustomAttributeTableRow((uint)(_rows.Count + 1), hasCustomAttributeToken, constructorToken, value);
+                        _rows.Add(row);
+                        return row;
                     }
                 }
                 internal override void Save(BinaryWriter binaryWriter)
@@ -101,7 +102,7 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                internal CustomAttributeTable()
+                public CustomAttributeTable()
                 {
                 }
                 internal CustomAttributeTable(uint rows, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)

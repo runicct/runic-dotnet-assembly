@@ -107,13 +107,13 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                public uint Add(FieldAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+                public FieldTableRow Add(FieldAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
                 {
                     lock (this)
                     {
                         FieldTableRow row = new FieldTableRow(this, (uint)(_rows.Count + 1), attributes, name, signature);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
                 internal FieldTable()

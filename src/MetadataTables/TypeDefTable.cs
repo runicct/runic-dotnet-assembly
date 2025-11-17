@@ -150,16 +150,16 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                public uint Add(Heap.StringHeap.String name, Heap.StringHeap.String @namespace, TypeAttributes attributes, ushort parentTypeRefToken, FieldTable.FieldTableRow fieldList, MethodDefTable.MethodDefTableRow methodList)
+                public TypeDefTableRow Add(Heap.StringHeap.String name, Heap.StringHeap.String @namespace, TypeAttributes attributes, ushort parentTypeRefToken, FieldTable.FieldTableRow fieldList, MethodDefTable.MethodDefTableRow methodList)
                 {
                     lock (this)
                     {
                         TypeDefTableRow row = new TypeDefTableRow(this, (uint)(_rows.Count + 1), name, @namespace, attributes, parentTypeRefToken, fieldList, methodList);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
-                internal TypeDefTable()
+                public TypeDefTable()
                 {
                 }
                 internal TypeDefTable(uint rows, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable, BinaryReader reader)

@@ -87,16 +87,16 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                public uint Add(uint RVA, FieldTable.FieldTableRow Field)
+                public FieldRVATableRow Add(uint RVA, FieldTable.FieldTableRow Field)
                 {
                     lock (this)
                     {
                         FieldRVATableRow row = new FieldRVATableRow((uint)(_rows.Count + 1), RVA, Field);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
-                internal FieldRVATable()
+                public FieldRVATable()
                 {
                 }
                 internal FieldRVATable(uint rows, FieldTable fieldTable, BinaryReader reader)

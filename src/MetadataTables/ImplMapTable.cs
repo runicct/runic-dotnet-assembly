@@ -91,12 +91,13 @@ namespace Runic.Dotnet
                         binaryWriter.Write((ushort)_importScope);
                     }
                 }
-                public uint Add(ushort flags, uint memberForwardToken, Heap.StringHeap.String name, uint importScope)
+                public ImplMapTableRow Add(ushort flags, uint memberForwardToken, Heap.StringHeap.String name, uint importScope)
                 {
                     lock (this)
                     {
-                        _rows.Add(new ImplMapTableRow((uint)(_rows.Count + 1), flags, memberForwardToken, name, importScope));
-                        return (uint)(_rows.Count);
+                        ImplMapTableRow row = new ImplMapTableRow((uint)(_rows.Count + 1), flags, memberForwardToken, name, importScope);
+                        _rows.Add(row);
+                        return row;
                     }
                 }
                 internal override void Save(BinaryWriter binaryWriter)

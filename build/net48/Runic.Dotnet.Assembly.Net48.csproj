@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{8E976119-06DF-49B3-A709-75BB74C673CD}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Runic.Dotnet.Assembly</RootNamespace>
+    <AssemblyName>Runic.Dotnet.Assembly</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\Assembly.cs">
+      <Link>Assembly.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\BitConverterLE.cs">
+      <Link>BitConverterLE.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\BlobHeap.cs">
+      <Link>BlobHeap.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\FieldAttributes.cs">
+      <Link>FieldAttributes.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\GUIDHeap.cs">
+      <Link>GUIDHeap.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Heap.cs">
+      <Link>Heap.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataRoot.cs">
+      <Link>MetadataRoot.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\AssemblyRefTable.cs">
+      <Link>MetadataTable\AssemblyRefTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\AssemblyTable.cs">
+      <Link>MetadataTable\AssemblyTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\CustomAttributeTable.cs">
+      <Link>MetadataTable\CustomAttributeTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\DeclSecurityTable.cs">
+      <Link>MetadataTable\DeclSecurityTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\FieldRVATable.cs">
+      <Link>MetadataTable\FieldRVATable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\FieldTable.cs">
+      <Link>MetadataTable\FieldTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\ImplMapTable.cs">
+      <Link>MetadataTable\ImplMapTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\MemberRefTable.cs">
+      <Link>MetadataTable\MemberRefTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\MetadataTable.cs">
+      <Link>MetadataTable\MetadataTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\MethodDefTable.cs">
+      <Link>MetadataTable\MethodDefTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\ModuleRefTable.cs">
+      <Link>MetadataTable\ModuleRefTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\ModuleTable.cs">
+      <Link>MetadataTable\ModuleTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\ParamTable.cs">
+      <Link>MetadataTable\ParamTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\StandAloneSigTable.cs">
+      <Link>MetadataTable\StandAloneSigTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\TypeDefTable.cs">
+      <Link>MetadataTable\TypeDefTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\TypeRefTable.cs">
+      <Link>MetadataTable\TypeRefTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\DocumentTable.cs">
+      <Link>MetadataTable\DocumentTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\MethodDebugInformationTable.cs">
+      <Link>MetadataTable\MethodDebugInformationTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\LocalScopeTable.cs">
+      <Link>MetadataTable\LocalScopeTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\LocalVariableTable.cs">
+      <Link>MetadataTable\LocalVariableTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\LocalConstantTable.cs">
+      <Link>MetadataTable\LocalConstantTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\ImportScopeTable.cs">
+      <Link>MetadataTable\ImportScopeTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MethodFlags.cs">
+      <Link>MethodFlags.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\LocalVariableAttributes.cs">
+      <Link>LocalVariableAttributes.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MethodHeader.cs">
+      <Link>MethodHeader.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\StringHeap.cs">
+      <Link>StringHeap.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\TypeAttributes.cs">
+      <Link>TypeAttributes.cs</Link>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

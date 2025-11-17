@@ -125,16 +125,16 @@ namespace Runic.Dotnet
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal uint Add(System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
+                public AssemblyTableRow Add(System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
 #else
-                internal uint Add(System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String culture)
+                public AssemblyTableRow Add(System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String culture)
 #endif
                 {
                     lock (this)
                     {
                         AssemblyTableRow row = new AssemblyTableRow((uint)(_rows.Count + 1), version, name, culture);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
                 public AssemblyTable() : base()

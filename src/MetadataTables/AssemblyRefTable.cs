@@ -133,13 +133,13 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                public uint Add(System.Version version, Heap.StringHeap.String name, Heap.BlobHeap.Blob publicKey)
+                public AssemblyRefTableRow Add(System.Version version, Heap.StringHeap.String name, Heap.BlobHeap.Blob publicKey)
                 {
                     lock (this)
                     {
                         AssemblyRefTableRow row = new AssemblyRefTableRow((uint)(_rows.Count + 1), version, name, publicKey);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
                 internal AssemblyRefTable()

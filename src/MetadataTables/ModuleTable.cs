@@ -98,13 +98,13 @@ namespace Runic.Dotnet
                 }
                 List<ModuleTableRow> _rows = new List<ModuleTableRow>();
                 public ModuleTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public uint Add(Heap.StringHeap.String name, Heap.GUIDHeap.GUID guid)
+                public ModuleTableRow Add(Heap.StringHeap.String name, Heap.GUIDHeap.GUID guid)
                 {
                     lock (this)
                     {
                         ModuleTableRow row = new ModuleTableRow(this, (uint)(_rows.Count + 1), name, guid);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
                 public ModuleTable()

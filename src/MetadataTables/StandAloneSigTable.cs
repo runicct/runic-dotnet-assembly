@@ -85,16 +85,16 @@ namespace Runic.Dotnet
                 }
                 List<StandAloneSigTableRow> _rows = new List<StandAloneSigTableRow>();
                 public StandAloneSigTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public uint Add(Heap.BlobHeap.Blob signature)
+                public StandAloneSigTableRow Add(Heap.BlobHeap.Blob signature)
                 {
                     lock (this)
                     {
                         StandAloneSigTableRow row = new StandAloneSigTableRow((uint)(_rows.Count + 1), signature);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
-                internal StandAloneSigTable()
+                public StandAloneSigTable()
                 {
 
                 }

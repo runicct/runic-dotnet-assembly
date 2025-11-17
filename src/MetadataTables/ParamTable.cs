@@ -46,12 +46,13 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public ParamTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public uint Add(Heap.StringHeap.String name, int sequence)
+                public ParamTableRow Add(Heap.StringHeap.String name, int sequence)
                 {
                     lock (this)
                     {
-                        _rows.Add(new ParamTableRow(this, (uint)(_rows.Count + 1), name, sequence));
-                        return (uint)_rows.Count;
+                        ParamTableRow row = new ParamTableRow(this, (uint)(_rows.Count + 1), name, sequence);
+                        _rows.Add(row);
+                        return row;
                     }
                 }
                 public class ParamTableRow : MetadataTableRow
@@ -108,7 +109,7 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                internal ParamTable()
+                public ParamTable()
                 {
                 }
                 internal void Load(Heap.StringHeap stringHeap, BinaryReader reader)

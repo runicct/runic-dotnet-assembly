@@ -45,7 +45,8 @@ namespace Runic.Dotnet
                 {
                     MethodDefTable _parent;
                     public MethodDefTable Parent { get { return _parent; } }
-                    ushort _implAttributes;
+                    MethodImplAttributes _implAttributes;
+                    public MethodImplAttributes ImplAttributes { get { return _implAttributes; } }
                     public override uint Length { get { return 6; } }
                     uint _methodBodyRVA;
                     public uint MethodBodyRVA { get { return _methodBodyRVA; } internal set { _methodBodyRVA = value; } }
@@ -53,19 +54,20 @@ namespace Runic.Dotnet
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.BlobHeap.Blob _signature;
                     public Heap.BlobHeap.Blob Signature { get { return _signature; } }
-                    MethodFlags _flags;
-                    public MethodFlags Flags { get { return _flags; } }
+                    MethodAttributes _attributes;
+                    public MethodAttributes Attributes { get { return _attributes; } }
                     ParamTable.ParamTableRow _parameterList;
                     public ParamTable.ParamTableRow ParameterList { get { return _parameterList; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal MethodDefTableRow(MethodDefTable parent, uint row, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodFlags flags, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
+                    internal MethodDefTableRow(MethodDefTable parent, uint row, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
                     {
                         _row = row;
                         _name = name;
                         _signature = signature;
                         _parent = parent;
-                        _flags = flags;
+                        _attributes = attributes;
+                        _implAttributes = implAttributes;
                         _methodBodyRVA = methodBodyRVA;
                         _parameterList = paramList;
                     }
@@ -81,8 +83,8 @@ namespace Runic.Dotnet
 #endif
                     {
                         _methodBodyRVA = reader.ReadUInt32();
-                        _implAttributes = reader.ReadUInt16();
-                        _flags = (MethodFlags)reader.ReadUInt16();
+                        _implAttributes = (MethodImplAttributes)reader.ReadUInt16();
+                        _attributes = (MethodAttributes)reader.ReadUInt16();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint blobIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         if (paramTable != null)
@@ -100,8 +102,8 @@ namespace Runic.Dotnet
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, ParamTable? paramTable, Span<byte> data, ref uint offset)
                     {
                         _methodBodyRVA = BitConverterLE.ToUInt32(data, offset); offset += 4;
-                        _implAttributes = BitConverterLE.ToUInt16(data, offset); offset += 2;
-                        _flags = (MethodFlags)BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        _implAttributes = (MethodImplAttributes)BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        _attributes = (MethodAttributes)BitConverterLE.ToUInt16(data, offset); offset += 2;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint blobIndex = 0; if (blobHeap.LargeIndices) { blobIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { blobIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
@@ -123,8 +125,8 @@ namespace Runic.Dotnet
                         lock (this)
                         {
                             binaryWriter.Write(_methodBodyRVA);
-                            binaryWriter.Write(_implAttributes);
-                            binaryWriter.Write((ushort)_flags);
+                            binaryWriter.Write((ushort)_implAttributes);
+                            binaryWriter.Write((ushort)_attributes);
                             binaryWriter.Write(_name.Index);
                             binaryWriter.Write(_signature.Index);
                             if (_parameterList.Parent.LargeIndices)
@@ -141,7 +143,7 @@ namespace Runic.Dotnet
                 List<MethodDefTableRow> _rows = new List<MethodDefTableRow>();
                 public override uint Columns { get { return 6; } }
                 public override uint Rows { get { return (uint)_rows.Count; } }
-                internal MethodDefTable()
+                public MethodDefTable()
                 {
                 }
                 internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, ParamTable paramTable, BinaryReader reader)
@@ -179,13 +181,13 @@ namespace Runic.Dotnet
                         }
                     }
                 }
-                public uint Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodFlags flags, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
+                public MethodDefTableRow Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
                 {
                     lock (this)
                     {
-                        MethodDefTableRow row = new MethodDefTableRow(this, (uint)(_rows.Count + 1), name, signature, flags, methodBodyRVA, paramList);
+                        MethodDefTableRow row = new MethodDefTableRow(this, (uint)(_rows.Count + 1), name, signature, attributes, implAttributes, methodBodyRVA, paramList);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
             }

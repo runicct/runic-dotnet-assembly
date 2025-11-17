@@ -95,16 +95,16 @@ namespace Runic.Dotnet
                 public override uint Columns { get { return 3; } }
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
-                public uint Add(ushort resolutionScopeToken, Heap.StringHeap.String name, Heap.StringHeap.String @namespace)
+                public TypeRefTableRow Add(ushort resolutionScopeToken, Heap.StringHeap.String name, Heap.StringHeap.String @namespace)
                 {
                     lock (this)
                     {
                         TypeRefTableRow row = new TypeRefTableRow((uint)(_rows.Count + 1), resolutionScopeToken, name, @namespace);
                         _rows.Add(row);
-                        return (uint)_rows.Count;
+                        return row;
                     }
                 }
-                internal TypeRefTable()
+                public TypeRefTable()
                 {
                 }
                 internal TypeRefTable(uint rows, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
