@@ -41,8 +41,10 @@ static string CreateNuspec(string packageId, string version, string description,
     stringBuilder.AppendLine("    <description>" + description + "</description>");
     stringBuilder.AppendLine("    <projectUrl>https://github.com/runicct/runic-dotnet-assembly</projectUrl>");
     stringBuilder.AppendLine("    <language>en-US</language>");
-    stringBuilder.AppendLine("    <tags>runic compiler construction toolkit " + tags + "</tags>");
+    stringBuilder.AppendLine("    <tags>runic runicct compiler construction toolkit " + tags + "</tags>");
     stringBuilder.AppendLine("    <license type=\"expression\">MIT</license>");
+    stringBuilder.AppendLine("    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>");
+    stringBuilder.AppendLine("    <icon>runic_logo.png</icon>");
     stringBuilder.AppendLine("  </metadata>");
     stringBuilder.AppendLine("</package>");
     return stringBuilder.ToString();
