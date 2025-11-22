@@ -56,7 +56,7 @@ namespace Runic.Dotnet
                 {
                     get { return _largeIndices; }
                 }
-                public BlobHeap(bool largeIndices, uint rva, uint size) : base(rva, size)
+                public BlobHeap(bool largeIndices, uint relativeVirtualAddress, uint size) : base(relativeVirtualAddress, size)
                 {
                 }
             }

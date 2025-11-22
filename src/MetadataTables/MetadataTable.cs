@@ -106,9 +106,9 @@ namespace Runic.Dotnet
                 bool GUIDLargeIndices = (heapSize & 0x02) != 0;
                 bool blobLargeIndices = (heapSize & 0x04) != 0;
 
-                stringHeap = new Heap.StringHeap(stringLargeIndices, strings.RVA, strings.Size);
-                blobHeap = new Heap.BlobHeap(blobLargeIndices, blob.RVA, blob.Size);
-                GUIDHeap = new Heap.GUIDHeap(GUIDLargeIndices, GUID.RVA, GUID.Size);
+                stringHeap = new Heap.StringHeap(stringLargeIndices, strings.RelativeVirtualAddress, strings.Size);
+                blobHeap = new Heap.BlobHeap(blobLargeIndices, blob.RelativeVirtualAddress, blob.Size);
+                GUIDHeap = new Heap.GUIDHeap(GUIDLargeIndices, GUID.RelativeVirtualAddress, GUID.Size);
 
                 offset++; // Reserved
                 ulong validTables = BitConverterLE.ToUInt64(data, offset); offset += 8;
@@ -182,9 +182,9 @@ namespace Runic.Dotnet
                 bool GUIDLargeIndices = (heapSize & 0x02) != 0;
                 bool blobLargeIndices = (heapSize & 0x04) != 0;
 
-                stringHeap = new Heap.StringHeap(stringLargeIndices, strings.RVA, strings.Size);
-                blobHeap = new Heap.BlobHeap(blobLargeIndices, blob.RVA, blob.Size);
-                GUIDHeap = new Heap.GUIDHeap(GUIDLargeIndices, GUID.RVA, GUID.Size);
+                stringHeap = new Heap.StringHeap(stringLargeIndices, strings.RelativeVirtualAddress, strings.Size);
+                blobHeap = new Heap.BlobHeap(blobLargeIndices, blob.RelativeVirtualAddress, blob.Size);
+                GUIDHeap = new Heap.GUIDHeap(GUIDLargeIndices, GUID.RelativeVirtualAddress, GUID.Size);
 
                 reader.ReadByte(); // Reserved
 

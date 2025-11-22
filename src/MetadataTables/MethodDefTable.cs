@@ -49,7 +49,7 @@ namespace Runic.Dotnet
                     public MethodImplAttributes ImplAttributes { get { return _implAttributes; } }
                     public override uint Length { get { return 6; } }
                     uint _methodBodyRVA;
-                    public uint MethodBodyRVA { get { return _methodBodyRVA; } internal set { _methodBodyRVA = value; } }
+                    public uint MethodBodyRelativeVirtualAddress { get { return _methodBodyRVA; } internal set { _methodBodyRVA = value; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.BlobHeap.Blob _signature;
@@ -181,11 +181,11 @@ namespace Runic.Dotnet
                         }
                     }
                 }
-                public MethodDefTableRow Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
+                public MethodDefTableRow Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRelativeVirtualAddress, ParamTable.ParamTableRow paramList)
                 {
                     lock (this)
                     {
-                        MethodDefTableRow row = new MethodDefTableRow(this, (uint)(_rows.Count + 1), name, signature, attributes, implAttributes, methodBodyRVA, paramList);
+                        MethodDefTableRow row = new MethodDefTableRow(this, (uint)(_rows.Count + 1), name, signature, attributes, implAttributes, methodBodyRelativeVirtualAddress, paramList);
                         _rows.Add(row);
                         return row;
                     }

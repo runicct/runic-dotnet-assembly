@@ -49,7 +49,7 @@ static string CreateNuspec(string packageId, string version, string description,
     stringBuilder.AppendLine("</package>");
     return stringBuilder.ToString();
 }
-string version = "1.0.0";
+string version = "1.0.1";
 string currentExeDir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(System.Environment.ProcessPath));
 string rootDir = System.IO.Path.GetFullPath(currentExeDir + "/../../../../..");
 string binDir = System.IO.Path.GetFullPath(rootDir + "/bin");
@@ -72,7 +72,7 @@ using (var fileStream = new FileStream(nupkgPath, FileMode.Create, FileAccess.Re
         var entry = zip.CreateEntry("Runic.Dotnet.Assembly.nuspec", CompressionLevel.Optimal);
         using (var stream = entry.Open())
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(CreateNuspec("Runic.Dotnet.Assembly", "1.0.0", "This package is part of Runic Compiler Toolkit and provides a way to load and create dotnet assembly", "dotnet assembly loader generator reflection"));
+            var bytes = System.Text.Encoding.UTF8.GetBytes(CreateNuspec("Runic.Dotnet.Assembly", version, "This package is part of Runic Compiler Toolkit and provides a way to load and create dotnet assembly", "dotnet assembly loader generator reflection"));
             stream.Write(bytes, 0, bytes.Length);
         }
         entry = zip.CreateEntry("lib/net4.8/Runic.Dotnet.Assembly.dll", CompressionLevel.Optimal);

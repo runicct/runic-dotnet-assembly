@@ -66,7 +66,7 @@ namespace Runic.Dotnet
 
                 return header;
             }
-            public static void Save(System.IO.BinaryWriter writer, int bytecodeLength, int maxStackSize, uint localSignatureToken, bool moreSections, bool initLocals)
+            public static void Save(int bytecodeLength, int maxStackSize, uint localSignatureToken, bool moreSections, bool initLocals, System.IO.BinaryWriter writer)
             {
                 bool canUseTinyHeader = true;
                 if (bytecodeLength > 63) { canUseTinyHeader = false; }

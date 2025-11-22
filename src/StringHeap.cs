@@ -45,9 +45,9 @@ namespace Runic.Dotnet
                     {
                         get { return _heap; }
                     }
-                    public uint RVA
+                    public uint RelativeVirtualAddress
                     {
-                        get { return _heap.RVA + _index ; }
+                        get { return _heap.RelativeVirtualAddress + _index ; }
                     }
                     public String(StringHeap heap, uint index)
                     {
@@ -60,14 +60,8 @@ namespace Runic.Dotnet
                 {
                     get { return _largeIndices; }
                 }
-                uint _rva;
-                public uint RVA
+                public StringHeap(bool largeIndices, uint relativeVirtualAddress, uint size) : base(relativeVirtualAddress, size)
                 {
-                    get { return _rva; }
-                }
-                public StringHeap(bool largeIndices, uint rva, uint size) : base(rva, size)
-                {
-                    _rva = rva;
                 }
             }
         }

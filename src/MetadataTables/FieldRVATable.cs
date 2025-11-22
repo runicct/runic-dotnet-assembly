@@ -46,16 +46,16 @@ namespace Runic.Dotnet
                 public class FieldRVATableRow : MetadataTableRow
                 {
                     uint _rva;
-                    public uint RVA { get { return _rva; } }
+                    public uint RelativeVirtualAddress { get { return _rva; } }
                     FieldTable.FieldTableRow _field;
                     public FieldTable.FieldTableRow Field { get { return _field; } }
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public FieldRVATableRow(uint row, uint RVA, FieldTable.FieldTableRow Field)
+                    public FieldRVATableRow(uint row, uint relativeVirtualAddress, FieldTable.FieldTableRow Field)
                     {
                         _row = row;
-                        _rva = RVA;
+                        _rva = relativeVirtualAddress;
                         _field = Field;
                     }
                     public FieldRVATableRow(uint row, FieldTable fieldTable, BinaryReader reader)
@@ -87,11 +87,11 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                public FieldRVATableRow Add(uint RVA, FieldTable.FieldTableRow Field)
+                public FieldRVATableRow Add(uint relativeVirtualAddress, FieldTable.FieldTableRow Field)
                 {
                     lock (this)
                     {
-                        FieldRVATableRow row = new FieldRVATableRow((uint)(_rows.Count + 1), RVA, Field);
+                        FieldRVATableRow row = new FieldRVATableRow((uint)(_rows.Count + 1), relativeVirtualAddress, Field);
                         _rows.Add(row);
                         return row;
                     }

@@ -32,7 +32,7 @@ namespace Runic.Dotnet
         public abstract partial class Heap
         {
             uint _rva;
-            public uint RVA
+            public uint RelativeVirtualAddress
             {
                 get { return _rva; }
                 set { _rva = value; }

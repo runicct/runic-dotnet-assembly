@@ -34,26 +34,26 @@ namespace Runic.Dotnet
             public class Stream
             {
                 uint _rva;
-                public uint RVA
+                public virtual uint RelativeVirtualAddress
                 {
                     get { return _rva; }
                     set { _rva = value; }
                 }
                 uint _size;
-                public uint Size
+                public virtual uint Size
                 {
                     get { return _size; }
                     set { _size = value; }
                 }
                 string _name;
-                public string Name
+                public virtual string Name
                 {
                     get { return _name; }
                     set { _name = value; }
                 }
-                public Stream(uint rva, uint size, string name)
+                public Stream(uint relativeVirtualAddress, uint size, string name)
                 {
-                    _rva = rva;
+                    _rva = relativeVirtualAddress;
                     _size = size;
                     _name = name;
                 }
@@ -69,7 +69,7 @@ namespace Runic.Dotnet
                 set { _streams = value; }
             }
             uint _rva;
-            public uint RVA
+            public uint RelativeVirtualAddress
             {
                 get { return _rva; }
                 set { _rva = value; }
@@ -81,16 +81,16 @@ namespace Runic.Dotnet
                     return 0;
                 }
             }
-            string _vesion;
+            string _version;
             public string Version
             {
-                get { return _vesion; }
-                set { _vesion = value; }
+                get { return _version; }
+                set { _version = value; }
             }
             public MetadataRoot(uint rva, string version, Stream[] streams)
             {
                 _rva = rva;
-                _vesion = version;
+                _version = version;
                 _streams = streams;
             }
 #if NET6_0_OR_GREATER
@@ -176,7 +176,7 @@ namespace Runic.Dotnet
                 writer.Write((ushort)1); // Major Version
                 writer.Write((ushort)1); // Minor Version
                 writer.Write((uint)0); // Reserved
-                byte[] versionData = System.Text.Encoding.UTF8.GetBytes(_vesion);
+                byte[] versionData = System.Text.Encoding.UTF8.GetBytes(_version);
                 int padding = ((versionData.Length + 4) / 4) * 4 - (versionData.Length + 1);
                 // Length Number of bytes allocated to hold version string (including the terminator)
                 writer.Write((uint)(versionData.Length + padding + 1));
@@ -188,7 +188,7 @@ namespace Runic.Dotnet
                 for (int n = 0; n < _streams.Length; n++)
                 {
                     // Memory offset to start of this stream from start of the metadata root
-                    writer.Write((uint)(_streams[n].RVA - _rva));
+                    writer.Write((uint)(_streams[n].RelativeVirtualAddress - _rva));
                     writer.Write((uint)(_streams[n].Size));
                     // Name of the stream as null-terminated variable length array of ASCII characters, padded to the next 4-byte boundary with \0 characters.
                     byte[] streamName = System.Text.Encoding.UTF8.GetBytes(_streams[n].Name + "\0");
