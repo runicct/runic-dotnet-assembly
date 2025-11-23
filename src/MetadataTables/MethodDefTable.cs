@@ -49,7 +49,7 @@ namespace Runic.Dotnet
                     public MethodImplAttributes ImplAttributes { get { return _implAttributes; } }
                     public override uint Length { get { return 6; } }
                     uint _methodBodyRVA;
-                    public uint MethodBodyRelativeVirtualAddress { get { return _methodBodyRVA; } internal set { _methodBodyRVA = value; } }
+                    public uint MethodBodyRelativeVirtualAddress { get { return _methodBodyRVA; } set { _methodBodyRVA = value; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.BlobHeap.Blob _signature;

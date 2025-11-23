@@ -46,7 +46,7 @@ namespace Runic.Dotnet
                 public class FieldRVATableRow : MetadataTableRow
                 {
                     uint _rva;
-                    public uint RelativeVirtualAddress { get { return _rva; } }
+                    public uint RelativeVirtualAddress { get { return _rva; } set { _rva = value; } }
                     FieldTable.FieldTableRow _field;
                     public FieldTable.FieldTableRow Field { get { return _field; } }
                     public override uint Length { get { return 2; } }
