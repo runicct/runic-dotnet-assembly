@@ -42,24 +42,31 @@ namespace Runic.Dotnet
                     public System.Version Version { get { return _version; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
+                    AssemblyFlags _flags;
+                    public AssemblyFlags Flags { get { return _flags; } }
 #if NET6_0_OR_GREATER
                     Heap.StringHeap.String? _culture;
                     public Heap.StringHeap.String? Culture { get { return _culture; } }
+                    Heap.BlobHeap.Blob? _publicKey;
+                    public Heap.BlobHeap.Blob? PublicKey { get { return _publicKey; } }
 #else
                     Heap.StringHeap.String _culture;
                     public Heap.StringHeap.String Culture { get { return _culture; } }
+                    Heap.BlobHeap.Blob _publicKey;
+                    public Heap.BlobHeap.Blob PublicKey { get { return _publicKey; } }
 #endif
                     public override uint Length { get { return 0x06; } }
 #if NET6_0_OR_GREATER
-                    internal AssemblyTableRow(uint row, System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
+                    internal AssemblyTableRow(uint row, System.Version version, Heap.BlobHeap.Blob? publickey, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
 #else
-                    internal AssemblyTableRow(uint row, System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String culture)
+                    internal AssemblyTableRow(uint row, System.Version version, Heap.BlobHeap.Blob publickey, Heap.StringHeap.String name, Heap.StringHeap.String culture)
 #endif
                     {
                         _row = row;
                         _version = version;
                         _name = name;
                         _culture = culture;
+                        _publicKey = publickey;
                     }
                     internal AssemblyTableRow(uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
                     {
@@ -70,7 +77,7 @@ namespace Runic.Dotnet
                         ushort assemblyVersionMinor = reader.ReadUInt16();
                         ushort assemblyVersionBuild = reader.ReadUInt16();
                         ushort assemblyVersionRevision = reader.ReadUInt16();
-                        uint flags = reader.ReadUInt32();
+                        _flags = (AssemblyFlags)reader.ReadUInt32();
                         uint publicKeyIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint cultureIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
@@ -89,27 +96,30 @@ namespace Runic.Dotnet
                         ushort assemblyVersionMinor = BitConverterLE.ToUInt16(data, offset); offset += 2;
                         ushort assemblyVersionBuild = BitConverterLE.ToUInt16(data, offset); offset += 2;
                         ushort assemblyVersionRevision = BitConverterLE.ToUInt16(data, offset); offset += 2;
-                        uint flags = BitConverterLE.ToUInt32(data, offset); offset += 4;
+                        _flags = (AssemblyFlags)BitConverterLE.ToUInt32(data, offset); offset += 4;
                         uint publicKeyIndex = 0; if (blobHeap.LargeIndices) { publicKeyIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { publicKeyIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint cultureIndex = 0; if (stringHeap.LargeIndices) { cultureIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { cultureIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
 
                         _version = new Version(assemblyVersionMajor, assemblyVersionMinor, assemblyVersionBuild, assemblyVersionRevision);
+                        _publicKey = new Heap.BlobHeap.Blob(blobHeap, publicKeyIndex);
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
                         _culture = cultureIndex == 0 ? null : new Heap.StringHeap.String(stringHeap, cultureIndex);
                     }
 #endif
-                    internal void Save(BinaryWriter binaryWriter)
+                    internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryWriter binaryWriter)
                     {
                         binaryWriter.Write(0x8004 /* SHA1 */ );
                         binaryWriter.Write((ushort)_version.Major);
                         binaryWriter.Write((ushort)_version.Minor);
                         binaryWriter.Write((ushort)_version.Build);
                         binaryWriter.Write((ushort)_version.Revision);
-                        binaryWriter.Write((int)0);
-                        binaryWriter.Write((int)0);
-                        binaryWriter.Write(_name.Index);
-                        binaryWriter.Write((int)0);
+                        binaryWriter.Write((uint)_flags);
+                        if (_publicKey != null) { if (_publicKey.Heap.LargeIndices) { binaryWriter.Write((uint)_publicKey.Index); } else { binaryWriter.Write((ushort)_publicKey.Index); } }
+                        else { if (blobHeap.LargeIndices) { binaryWriter.Write((uint)0); } else { binaryWriter.Write((ushort)0); } }
+                        if (_name.Heap.LargeIndices) { binaryWriter.Write((uint)_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
+                        if (_culture != null) { if (_culture.Heap.LargeIndices) { binaryWriter.Write((uint)_culture.Index); } else { binaryWriter.Write((ushort)_culture.Index); } }
+                        else { if (stringHeap.LargeIndices) { binaryWriter.Write((uint)0); } else { binaryWriter.Write((ushort)0); } }
                     }
                 }
                 public override int ID { get { return 0x20; } }
@@ -117,22 +127,22 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public AssemblyTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public override bool Sorted { get { return false; } }
-                internal override void Save(BinaryWriter binaryWriter)
+                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows[n].Save(binaryWriter);
+                        _rows[n].Save(stringHeap, blobHeap, binaryWriter);
                     }
                 }
 #if NET6_0_OR_GREATER
-                public AssemblyTableRow Add(System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
+                public AssemblyTableRow Add(System.Version version, Heap.BlobHeap.Blob? publicKey, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
 #else
-                public AssemblyTableRow Add(System.Version version, Heap.StringHeap.String name, Heap.StringHeap.String culture)
+                public AssemblyTableRow Add(System.Version version, Heap.BlobHeap.Blob publicKey, Heap.StringHeap.String name, Heap.StringHeap.String culture)
 #endif
                 {
                     lock (this)
                     {
-                        AssemblyTableRow row = new AssemblyTableRow((uint)(_rows.Count + 1), version, name, culture);
+                        AssemblyTableRow row = new AssemblyTableRow((uint)(_rows.Count + 1), version, publicKey, name, culture);
                         _rows.Add(row);
                         return row;
                     }

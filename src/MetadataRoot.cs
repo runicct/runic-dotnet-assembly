@@ -78,7 +78,19 @@ namespace Runic.Dotnet
             {
                 get
                 {
-                    return 0;
+                    string versionString = _version + "\0";
+                    byte[] versionData = System.Text.Encoding.UTF8.GetBytes(versionString);
+                    int padding = ((versionData.Length + 3) / 4) * 4 - versionData.Length;
+                    int offset = 16 + versionData.Length + padding + 4;
+
+                    for (int n = 0; n < _streams.Length; n++)
+                    {
+                        byte[] streamName = System.Text.Encoding.UTF8.GetBytes(_streams[n].Name + "\0");
+                        padding = ((streamName.Length + 3) / 4) * 4 - streamName.Length;
+                        offset += 4 + 4 + streamName.Length + padding;
+                    }
+
+                    return (uint)offset;
                 }
             }
             string _version;
@@ -188,7 +200,11 @@ namespace Runic.Dotnet
                 for (int n = 0; n < _streams.Length; n++)
                 {
                     // Memory offset to start of this stream from start of the metadata root
+                    uint streamRva = _streams[n].RelativeVirtualAddress;
+                    if (streamRva < _rva) { throw new System.Exception("The stream RVA must be located after the MetadataRoot RVA"); }
                     writer.Write((uint)(_streams[n].RelativeVirtualAddress - _rva));
+                    uint size = (uint)(_streams[n].Size);
+                    if (size % 4 != 0) { throw new System.Exception("The size of the stream must be 4-bytes aligned"); }
                     writer.Write((uint)(_streams[n].Size));
                     // Name of the stream as null-terminated variable length array of ASCII characters, padded to the next 4-byte boundary with \0 characters.
                     byte[] streamName = System.Text.Encoding.UTF8.GetBytes(_streams[n].Name + "\0");

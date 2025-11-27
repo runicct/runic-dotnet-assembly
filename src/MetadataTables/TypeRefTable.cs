@@ -84,7 +84,7 @@ namespace Runic.Dotnet
                         binaryWriter.Write(_namespace.Index);
                     }
                 }
-                internal override void Save(BinaryWriter binaryWriter)
+                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

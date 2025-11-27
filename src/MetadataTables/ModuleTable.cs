@@ -41,16 +41,18 @@ namespace Runic.Dotnet
                 {
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
-                    Heap.GUIDHeap.GUID _guid;
-                    public Heap.GUIDHeap.GUID GUID { get { return _guid; } }
+                    Heap.GUIDHeap.GUID _mvid;
+                    public Heap.GUIDHeap.GUID Mvid { get { return _mvid; } }
                     public override uint Length { get { return 5; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal ModuleTableRow(ModuleTable parent, uint row, Heap.StringHeap.String name, Heap.GUIDHeap.GUID guid)
+                    ushort _generation;
+                    public ushort Generation { get { return _generation; } }
+                    internal ModuleTableRow(ModuleTable parent, uint row, Heap.StringHeap.String name, Heap.GUIDHeap.GUID mvid)
                     {
                         _row = row;
                         _name = name;
-                        _guid = guid;
+                        _mvid = mvid;
                     }
                     internal ModuleTableRow(ModuleTable parent, uint row, Heap.StringHeap stringHeap, Heap.GUIDHeap guidHeap, BinaryReader reader)
                     {
@@ -61,48 +63,48 @@ namespace Runic.Dotnet
                         uint encBaseIdIndex = guidHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _row = row;
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _guid = new Heap.GUIDHeap.GUID(guidHeap, mvidIndex);
+                        _mvid = new Heap.GUIDHeap.GUID(guidHeap, mvidIndex);
                     }
 #if NET6_0_OR_GREATER
                     internal ModuleTableRow(ModuleTable parent, uint row, Heap.StringHeap stringHeap, Heap.GUIDHeap guidHeap, Span<byte> data, ref uint offset)
                     {
-                        ushort generation = BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        _generation = BitConverterLE.ToUInt16(data, offset); offset += 2;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint mvidIndex = 0;  if (guidHeap.LargeIndices) { mvidIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { mvidIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint encIdIndex = 0; if (guidHeap.LargeIndices) { encIdIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { encIdIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint encBaseIdIndex = 0; if (guidHeap.LargeIndices) { encBaseIdIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { encBaseIdIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _row = row;
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _guid = new Heap.GUIDHeap.GUID(guidHeap, mvidIndex);
+                        _mvid = new Heap.GUIDHeap.GUID(guidHeap, mvidIndex);
                     }
 #endif
-                    internal void Save(BinaryWriter binaryWriter)
+                    internal void Save(Heap.GUIDHeap guidHeap, BinaryWriter binaryWriter)
                     {
-                        binaryWriter.Write((short)0x00);
-                        binaryWriter.Write(_name.Index);
-                        binaryWriter.Write(_guid.Index);
-                        binaryWriter.Write((int)0x0);
-                        binaryWriter.Write((int)0x0);
+                        binaryWriter.Write(_generation);
+                        if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((short)_name.Index); }
+                        if (_mvid.Heap.LargeIndices) { binaryWriter.Write(_mvid.Index); } else { binaryWriter.Write((short)_mvid.Index); }
+                        if (guidHeap.LargeIndices) { binaryWriter.Write((int)0x0); } else { binaryWriter.Write((short)0x0); }
+                        if (guidHeap.LargeIndices) { binaryWriter.Write((int)0x0); } else { binaryWriter.Write((short)0x0); }
                     }
                 }
                 public override int ID { get { return 0; } }
                 public override uint Columns { get { return 5; } }
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
-                internal override void Save(BinaryWriter binaryWriter)
+                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows[n].Save(binaryWriter);
+                        _rows[n].Save(GUIDHeap, binaryWriter);
                     }
                 }
                 List<ModuleTableRow> _rows = new List<ModuleTableRow>();
                 public ModuleTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public ModuleTableRow Add(Heap.StringHeap.String name, Heap.GUIDHeap.GUID guid)
+                public ModuleTableRow Add(Heap.StringHeap.String name, Heap.GUIDHeap.GUID mvid)
                 {
                     lock (this)
                     {
-                        ModuleTableRow row = new ModuleTableRow(this, (uint)(_rows.Count + 1), name, guid);
+                        ModuleTableRow row = new ModuleTableRow(this, (uint)(_rows.Count + 1), name, mvid);
                         _rows.Add(row);
                         return row;
                     }

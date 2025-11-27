@@ -78,15 +78,15 @@ namespace Runic.Dotnet
                     internal void Save(BinaryWriter binaryWriter)
                     {
                         binaryWriter.Write(_parentToken);
-                        binaryWriter.Write(_name.Index);
-                        binaryWriter.Write(_signature.Index);
+                        if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
+                        if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((ushort)_signature.Index); }
                     }
                 }
                 public override int ID { get { return 0x0A; } }
                 public override uint Columns { get { return 3; } }
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
-                internal override void Save(BinaryWriter binaryWriter)
+                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

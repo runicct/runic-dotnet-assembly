@@ -46,11 +46,12 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public ParamTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public ParamTableRow Add(Heap.StringHeap.String name, int sequence)
+                public ParamTableRow Add(ParamAttributes attributes, Heap.StringHeap.String name, int sequence)
                 {
                     lock (this)
                     {
-                        ParamTableRow row = new ParamTableRow(this, (uint)(_rows.Count + 1), name, sequence);
+                        if (name == null) { throw new System.ArgumentException("Parameter name must be a valid string"); }
+                        ParamTableRow row = new ParamTableRow(this, (uint)(_rows.Count + 1), attributes, name, sequence);
                         _rows.Add(row);
                         return row;
                     }
@@ -64,14 +65,17 @@ namespace Runic.Dotnet
                     public override uint Length { get { return 3; } }
                     int _sequence;
                     public int Sequence { get { return _sequence; } }
+                    ParamAttributes _attributes;
+                    public ParamAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public ParamTableRow(ParamTable parent, uint row, Heap.StringHeap.String name, int sequence)
+                    public ParamTableRow(ParamTable parent, uint row, ParamAttributes attributes, Heap.StringHeap.String name, int sequence)
                     {
                         _parent = parent;
                         _sequence = sequence;
                         _name = name;
                         _row = row;
+                        _attributes = attributes;
                     }
                     internal ParamTableRow(ParamTable parent, uint row)
                     {
@@ -80,7 +84,7 @@ namespace Runic.Dotnet
                     }
                     internal void Load(Heap.StringHeap stringHeap, BinaryReader reader)
                     {
-                        ushort value = reader.ReadUInt16();
+                        _attributes = (ParamAttributes)reader.ReadUInt16();
                         _sequence = reader.ReadUInt16();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
@@ -89,7 +93,7 @@ namespace Runic.Dotnet
 
                     internal void Load(Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
                     {
-                        ushort value = BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        _attributes = (ParamAttributes)BitConverterLE.ToUInt16(data, offset); offset += 2;
                         _sequence = BitConverterLE.ToUInt16(data, offset); offset += 2;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
@@ -97,12 +101,12 @@ namespace Runic.Dotnet
 #endif
                     internal void Save(BinaryWriter binaryWriter)
                     {
-                        binaryWriter.Write((short)0);
+                        binaryWriter.Write((ushort)_attributes);
                         binaryWriter.Write((ushort)_sequence);
-                        binaryWriter.Write(_name.Index);
+                        if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((short)_name.Index); }
                     }
                 }
-                internal override void Save(BinaryWriter binaryWriter)
+                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

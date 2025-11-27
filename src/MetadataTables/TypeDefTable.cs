@@ -48,6 +48,7 @@ namespace Runic.Dotnet
                     uint _row;
                     public override uint Row { get { return _row; } }
                     TypeDefTable _parent;
+                    internal TypeDefTable Parent { get { return _parent; } }
                     TypeAttributes _attributes;
                     public TypeAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
 #if NET6_0_OR_GREATER
@@ -143,7 +144,7 @@ namespace Runic.Dotnet
                         else { binaryWriter.Write((ushort)methodList); }
                     }
                 }
-                internal override void Save(BinaryWriter binaryWriter)
+                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

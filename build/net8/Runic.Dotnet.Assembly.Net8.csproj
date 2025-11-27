@@ -66,6 +66,9 @@
     <Compile Include="..\..\src\MetadataTables\ModuleTable.cs">
       <Link>MetadataTable\ModuleTable.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\MetadataTables\NestedClassTable.cs">
+      <Link>MetadataTable\NestedClassTable.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\MetadataTables\ParamTable.cs">
       <Link>MetadataTable\ParamTable.cs</Link>
     </Compile>
@@ -101,6 +104,12 @@
     </Compile>
     <Compile Include="..\..\src\MethodFlags.cs">
       <Link>MethodFlags.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\AssemblyFlags.cs">
+      <Link>AssemblyFlags.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\ParamAttributes.cs">
+      <Link>ParamAttributes.cs</Link>
     </Compile>
     <Compile Include="..\..\src\MethodHeader.cs">
       <Link>MethodHeader.cs</Link>

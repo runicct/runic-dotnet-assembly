@@ -127,16 +127,9 @@ namespace Runic.Dotnet
                             binaryWriter.Write(_methodBodyRVA);
                             binaryWriter.Write((ushort)_implAttributes);
                             binaryWriter.Write((ushort)_attributes);
-                            binaryWriter.Write(_name.Index);
-                            binaryWriter.Write(_signature.Index);
-                            if (_parameterList.Parent.LargeIndices)
-                            {
-                                binaryWriter.Write((uint)_parameterList.Row);
-                            }
-                            else
-                            {
-                                binaryWriter.Write((ushort)_parameterList.Row);
-                            }
+                            if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
+                            if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((ushort)_signature.Index); }
+                            if (_parameterList.Parent.LargeIndices) { binaryWriter.Write((uint)_parameterList.Row); } else { binaryWriter.Write((ushort)_parameterList.Row); }
                         }
                     }
                 }
@@ -171,7 +164,7 @@ namespace Runic.Dotnet
                         _rows.Add(new MethodDefTableRow(this, (uint)(n + 1)));
                     }
                 }
-                internal override void Save(BinaryWriter binaryWriter)
+                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     lock (this)
                     {
