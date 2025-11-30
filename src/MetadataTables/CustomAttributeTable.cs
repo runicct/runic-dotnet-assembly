@@ -54,14 +54,14 @@ namespace Runic.Dotnet
                     public Heap.BlobHeap.Blob Value { get { return _value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public CustomAttributeTableRow(uint row, ushort hasCustomAttributeToken, ushort constructorToken, Heap.BlobHeap.Blob value)
+                    internal CustomAttributeTableRow(uint row, ushort hasCustomAttributeToken, ushort constructorToken, Heap.BlobHeap.Blob value)
                     {
                         _row = row;
                         _hasCustomAttributeToken = hasCustomAttributeToken;
                         _constructorToken = constructorToken;
                         _value = value;
                     }
-                    public CustomAttributeTableRow(uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    internal CustomAttributeTableRow(uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
                     {
                         _row = row;
                         _hasCustomAttributeToken = reader.ReadUInt16();
@@ -70,7 +70,7 @@ namespace Runic.Dotnet
                         _value = new Heap.BlobHeap.Blob(blobHeap, valueIndex);
                     }
 #if NET6_0_OR_GREATER
-                    public CustomAttributeTableRow(uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                    internal CustomAttributeTableRow(uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
                         _row = row;
                         _hasCustomAttributeToken = BitConverterLE.ToUInt16(data, offset); offset += 2;

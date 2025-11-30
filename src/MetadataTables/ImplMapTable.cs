@@ -55,7 +55,7 @@ namespace Runic.Dotnet
                     public uint ImportScope { get { return _importScope; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public ImplMapTableRow(uint row, ushort flags, uint memberForwardedToken, Heap.StringHeap.String name, uint importScope)
+                    internal ImplMapTableRow(uint row, ushort flags, uint memberForwardedToken, Heap.StringHeap.String name, uint importScope)
                     {
                         _row = row;
                         _flags = flags;
@@ -63,7 +63,7 @@ namespace Runic.Dotnet
                         _importScope = importScope;
                         _memberForwardedToken = memberForwardedToken;
                     }
-                    public ImplMapTableRow(uint row, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+                    internal ImplMapTableRow(uint row, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
                     {
                         _row = row;
                         _flags = reader.ReadUInt16();
@@ -73,7 +73,7 @@ namespace Runic.Dotnet
                         _importScope = reader.ReadUInt16();
                     }
 #if NET6_0_OR_GREATER
-                    public ImplMapTableRow(uint row, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
+                    internal ImplMapTableRow(uint row, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
                     {
                         _row = row;
                         _flags = BitConverterLE.ToUInt16(data, offset); offset += 2;

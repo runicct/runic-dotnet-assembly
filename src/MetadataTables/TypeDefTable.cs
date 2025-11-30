@@ -24,10 +24,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 
 namespace Runic.Dotnet
 {
@@ -43,7 +43,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
                 public TypeDefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class TypeDefTableRow : MetadataTableRow
+                public class TypeDefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -52,43 +52,95 @@ namespace Runic.Dotnet
                     TypeAttributes _attributes;
                     public TypeAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
 #if NET6_0_OR_GREATER
+                    ITypeDefOrRefOrSpec? _parentType = null;
+                    public ITypeDefOrRefOrSpec? ParentType { get { return _parentType; } internal set { _parentType = value; } }
                     Heap.StringHeap.String? _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.StringHeap.String? _namespace;
                     public Heap.StringHeap.String Namespace { get { return _namespace; } }
 #else
+                    ITypeDefOrRefOrSpec _parentType = null;
+                    public ITypeDefOrRefOrSpec ParentType { get { return _parentType; } internal set { _parentType = value; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.StringHeap.String _namespace;
                     public Heap.StringHeap.String Namespace { get { return _namespace; } }
 
 #endif
-                    ushort _parentTypeRefToken;
-                    public ushort ParentTypeRefToken { get { return _parentTypeRefToken; } }
                     FieldTable.FieldTableRow _fieldList;
                     public FieldTable.FieldTableRow FieldList { get { return _fieldList; } internal set { _fieldList = value; } }
+                    /// <summary>
+                    /// Return the next FieldTableRow after this type's last field, or null if this is the last type with fields.
+                    /// </summary>
+#if NET6_0_OR_GREATER
+                    public FieldTable.FieldTableRow? FieldListEnd
+#else
+                    public FieldTable.FieldTableRow FieldListEnd
+#endif
+                    {
+                        get
+                        {
+                            for (uint n = _row + 1; n <= _parent.Rows; n++)
+                            {
+                                TypeDefTableRow typeDefRow = _parent[n];
+                                if (typeDefRow.FieldList != null)
+                                {
+                                    return typeDefRow.FieldList;
+                                }
+                            }
+                            return null;
+                        }
+                    }
                     MethodDefTable.MethodDefTableRow _methodList;
                     public MethodDefTable.MethodDefTableRow MethodList { get { return _methodList; } internal set { _methodList = value; } }
+                    /// <summary>
+                    /// Return the next MethodDefTableRow after this type's last method, or null if this is the last type with methods.
+                    /// </summary>
+#if NET6_0_OR_GREATER
+                    public MethodDefTable.MethodDefTableRow? MethodListEnd
+#else
+                    public MethodDefTable.MethodDefTableRow MethodListEnd
+#endif
+                    {
+                        get
+                        {
+                            for (uint n = _row + 1; n <= _parent.Rows; n++)
+                            {
+                                TypeDefTableRow typeDefRow = _parent[n];
+                                if (typeDefRow.MethodList != null)
+                                {
+                                    return typeDefRow.MethodList;
+                                }
+                            }
+                            return null;
+                        }
+                    }
                     public override uint Length { get { return 6; } }
-                    public TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap.String name, Heap.StringHeap.String @namespace, TypeAttributes attributes, ushort parentTypeRefToken, FieldTable.FieldTableRow fieldList, MethodDefTable.MethodDefTableRow methodList)
+                    internal TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap.String name, Heap.StringHeap.String @namespace, TypeAttributes attributes, ITypeDefOrRefOrSpec parentType, FieldTable.FieldTableRow fieldList, MethodDefTable.MethodDefTableRow methodList)
                     {
                         _row = row;
                         _attributes = attributes;
                         _name = name;
                         _namespace = @namespace;
                         _parent = parent;
-                        _parentTypeRefToken = parentTypeRefToken;
+                        _parentType = parentType;
                         _fieldList = fieldList;
                         _methodList = methodList;
                     }
-                    public TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, BinaryReader reader)
+#if NET6_0_OR_GREATER
+                    internal TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryReader reader)
+#else
+                    internal TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, BinaryReader reader)
+#endif
                     {
                         _row = row;
                         _parent = parent;
                         _attributes = (TypeAttributes)reader.ReadUInt32();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint namespaceIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _parentTypeRefToken = reader.ReadUInt16();
+                        uint typeDefOrTypeRefTag = 0;
+                        if (TypeDefOrRefOrSpecLargeIndices(parent, typeRefTable, typeSpecTable)) { typeDefOrTypeRefTag = reader.ReadUInt32(); } else { typeDefOrTypeRefTag = reader.ReadUInt16(); }
+                        _parentType = TypeDefOrRefOrSpecDecode(typeDefOrTypeRefTag, parent, typeRefTable, typeSpecTable);
                         uint fieldList = fieldTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _fieldList =  fieldTable[fieldList];
                         uint methodList = methodDef.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
@@ -97,14 +149,16 @@ namespace Runic.Dotnet
                         if (namespaceIndex == 0) { _namespace = null; } else { _namespace = new Heap.StringHeap.String(stringHeap, namespaceIndex); }
                     }
 #if NET6_0_OR_GREATER
-                    public TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, Span<byte> data, ref uint offset)
+                    internal TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, Span<byte> data, ref uint offset)
                     {
                         _row = row;
                         _parent = parent;
                         _attributes = (TypeAttributes)BitConverterLE.ToUInt32(data, offset); offset += 4;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint namespaceIndex = 0; if (stringHeap.LargeIndices) { namespaceIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { namespaceIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parentTypeRefToken = BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        uint typeDefOrTypeRefTag = 0;
+                        if (TypeDefOrRefOrSpecLargeIndices(parent, typeRefTable, typeSpecTable)) { typeDefOrTypeRefTag = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { typeDefOrTypeRefTag = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        _parentType = TypeDefOrRefOrSpecDecode(typeDefOrTypeRefTag, parent, typeRefTable, typeSpecTable);
                         uint fieldList = 0; if (fieldTable.LargeIndices) { fieldList = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { fieldList = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         if (fieldList == 0 || (fieldList - 1) >= fieldTable.Rows) { _fieldList = null; } else { _fieldList = fieldTable[fieldList]; }
                         uint methodList = 0; if (methodDef.LargeIndices) { methodList = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { methodList = BitConverterLE.ToUInt16(data, offset); offset += 2; }
@@ -113,49 +167,84 @@ namespace Runic.Dotnet
                         if (namespaceIndex == 0) { _namespace = null; } else { _namespace = new Heap.StringHeap.String(stringHeap, namespaceIndex); }
                     }
 #endif
-                    internal void Save(BinaryWriter binaryWriter)
+
+#if NET6_0_OR_GREATER
+                    internal void Save(FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
+#else
+                    internal void Save(FieldTable fieldTable, MethodDefTable methodDefTable,  TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, BinaryWriter binaryWriter)
+#endif
                     {
                         binaryWriter.Write((uint)_attributes);
-                        if (_name != null) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((uint)0); }
-                        if (_namespace != null) { binaryWriter.Write(_namespace.Index); } else { binaryWriter.Write((uint)0); }
-
-                        binaryWriter.Write(_parentTypeRefToken);
-                        uint fieldList = _fieldList != null ? _fieldList.Row : 0;
-                        if (fieldList == 0)
+                        if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
+                        if (_namespace.Heap.LargeIndices) { binaryWriter.Write(_namespace.Index); } else { binaryWriter.Write((ushort)_namespace.Index); }
+                        uint index = TypeDefOrRefOrSpecEncode(_parentType);
+                        if (TypeDefOrRefOrSpecLargeIndices(_parent, typeRefTable, typeSpecTable)) { binaryWriter.Write(index); } else { binaryWriter.Write((ushort)index); }
+                        if (_fieldList == null)
                         {
-                            if (_row < _parent.Rows)
+#if NET6_0_OR_GREATER
+                            FieldTable.FieldTableRow? fieldListEnd = FieldListEnd;
+#else
+                            FieldTable.FieldTableRow fieldListEnd = FieldListEnd;
+#endif
+                            if (fieldListEnd != null)
                             {
-                                fieldList = _parent[(_row + 1)]._fieldList.Row;
+                                if (fieldListEnd.Parent.LargeIndices) { binaryWriter.Write((uint)(fieldListEnd.Row)); } else { binaryWriter.Write((ushort)(fieldListEnd.Row)); }
                             }
-                        }       
-                        if (_fieldList.Parent.LargeIndices) { binaryWriter.Write((uint)fieldList);}
-                        else { binaryWriter.Write((ushort)fieldList); }
-
-                        uint methodList = _methodList != null ? _methodList.Row : 0;
-                        if (methodList == 0)
-                        {
-                            if (_row < _parent.Rows)
+                            else
                             {
-                                methodList = _parent[(_row + 1)]._methodList.Row;
+                                if (fieldTable == null) { binaryWriter.Write((ushort)(1)); }
+                                else if (fieldTable.LargeIndices) { binaryWriter.Write((uint)(fieldTable.Rows + 1)); } else { binaryWriter.Write((ushort)(fieldTable.Rows + 1)); }
                             }
                         }
+                        else
+                        {
+                            if (_fieldList.Parent.LargeIndices) { binaryWriter.Write((uint)_fieldList.Row); }
+                            else { binaryWriter.Write((ushort)_fieldList.Row); }
+                        }
 
-                        if (_methodList.Parent.LargeIndices) { binaryWriter.Write((uint)methodList); }
-                        else { binaryWriter.Write((ushort)methodList); }
+                        if (_methodList == null)
+                        {
+#if NET6_0_OR_GREATER
+                            MethodDefTable.MethodDefTableRow? methodDefTableRow = MethodListEnd;
+#else
+                            MethodDefTable.MethodDefTableRow methodDefTableRow = MethodListEnd;
+#endif
+                            if (methodDefTableRow != null)
+                            {
+                                if (methodDefTableRow.Parent.LargeIndices) { binaryWriter.Write((uint)(methodDefTableRow.Row)); } else { binaryWriter.Write((ushort)(methodDefTableRow.Row)); }
+                            }
+                            else
+                            {
+                                if (methodDefTable == null) { binaryWriter.Write((ushort)(1)); }
+                                else if (methodDefTable.LargeIndices) { binaryWriter.Write((uint)(methodDefTable.Rows + 1)); } else { binaryWriter.Write((ushort)(methodDefTable.Rows + 1)); }
+                            }
+                        }
+                        else
+                        {
+                            if (_methodList.Parent.LargeIndices) { binaryWriter.Write((uint)_methodList.Row); } else { binaryWriter.Write((ushort)_methodList.Row); }
+                        }
                     }
                 }
                 internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
+                    Save(stringHeap, blobHeap, GUIDHeap, null, null, null, null, binaryWriter);
+                }
+#if NET6_0_OR_GREATER
+                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
+#else
+                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable,  BinaryWriter binaryWriter)
+#endif
+                {
                     for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows[n].Save(binaryWriter);
+                        _rows[n].Save(fieldTable, methodDefTable, typeRefTable, typeSpecTable, binaryWriter);
                     }
                 }
-                public TypeDefTableRow Add(Heap.StringHeap.String name, Heap.StringHeap.String @namespace, TypeAttributes attributes, ushort parentTypeRefToken, FieldTable.FieldTableRow fieldList, MethodDefTable.MethodDefTableRow methodList)
+                public TypeDefTableRow Add(Heap.StringHeap.String name, Heap.StringHeap.String @namespace, TypeAttributes attributes, ITypeDefOrRefOrSpec parentType, FieldTable.FieldTableRow fieldList, MethodDefTable.MethodDefTableRow methodList)
                 {
                     lock (this)
                     {
-                        TypeDefTableRow row = new TypeDefTableRow(this, (uint)(_rows.Count + 1), name, @namespace, attributes, parentTypeRefToken, fieldList, methodList);
+                        TypeDefTableRow row = new TypeDefTableRow(this, (uint)(_rows.Count + 1), name, @namespace, attributes, parentType, fieldList, methodList);
                         _rows.Add(row);
                         return row;
                     }
@@ -163,19 +252,23 @@ namespace Runic.Dotnet
                 public TypeDefTable()
                 {
                 }
-                internal TypeDefTable(uint rows, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable, BinaryReader reader)
+#if NET6_0_OR_GREATER
+                internal TypeDefTable(uint rows, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryReader reader)
+#else
+                internal TypeDefTable(uint rows, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, BinaryReader reader)
+#endif
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1), stringHeap, fieldTable, methodDefTable, reader));
+                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1), stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal TypeDefTable(uint rows, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable, Span<byte> data, ref uint offset)
+                internal TypeDefTable(uint rows, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, Span<byte> data, ref uint offset)
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1), stringHeap, fieldTable, methodDefTable, data, ref offset));
+                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1), stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, data, ref offset));
                     }
                 }
 #endif

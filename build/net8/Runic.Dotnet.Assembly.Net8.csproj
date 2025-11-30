@@ -81,6 +81,9 @@
     <Compile Include="..\..\src\MetadataTables\TypeRefTable.cs">
       <Link>MetadataTable\TypeRefTable.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\MetadataTables\TypeSpecTable.cs">
+      <Link>MetadataTable\TypeSpecTable.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\MetadataTables\DocumentTable.cs">
       <Link>MetadataTable\DocumentTable.cs</Link>
     </Compile>
@@ -98,6 +101,9 @@
     </Compile>
     <Compile Include="..\..\src\MetadataTables\ImportScopeTable.cs">
       <Link>MetadataTable\ImportScopeTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\Tags.cs">
+      <Link>MetadataTable\Tags.cs</Link>
     </Compile>
     <Compile Include="..\..\src\LocalVariableAttributes.cs">
       <Link>LocalVariableAttributes.cs</Link>

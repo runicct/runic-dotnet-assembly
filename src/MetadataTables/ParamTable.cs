@@ -69,7 +69,7 @@ namespace Runic.Dotnet
                     public ParamAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public ParamTableRow(ParamTable parent, uint row, ParamAttributes attributes, Heap.StringHeap.String name, int sequence)
+                    internal ParamTableRow(ParamTable parent, uint row, ParamAttributes attributes, Heap.StringHeap.String name, int sequence)
                     {
                         _parent = parent;
                         _sequence = sequence;

@@ -43,28 +43,30 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public ModuleRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class ModuleRefTableRow : MetadataTableRow
+                public class ModuleRefTableRow : MetadataTableRow, IResolutionScope
                 {
                     public override uint Length { get { return 1; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public ModuleRefTableRow(uint row, Heap.StringHeap.String name)
+                    internal ModuleRefTableRow(uint row, Heap.StringHeap.String name)
                     {
                         _row = row;
                         _name = name;
                     }
-                    public ModuleRefTableRow(uint row, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+                    internal ModuleRefTableRow(uint row)
                     {
                         _row = row;
+                    }
+                    internal void Load(Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+                    {
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
                     }
 #if NET6_0_OR_GREATER
-                    public ModuleRefTableRow(uint row, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
+                    internal void Load(Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
                     {
-                        _row = row;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
                     }
@@ -93,19 +95,26 @@ namespace Runic.Dotnet
                 public ModuleRefTable()
                 {
                 }
-                internal ModuleRefTable(uint rows, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+                internal ModuleRefTable(uint rows)
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new ModuleRefTableRow((uint)(n + 1), stringHeap, reader));
+                        _rows.Add(new ModuleRefTableRow((uint)(n + 1)));
+                    }
+                }
+                internal void Load(Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+                {
+                    for (int n = 0; n < _rows.Count; n++)
+                    {
+                        _rows[n].Load(stringHeap, reader);
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal ModuleRefTable(uint rows, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
+                internal void Load(Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
                 {
-                    for (uint n = 0; n < rows; n++)
+                    for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows.Add(new ModuleRefTableRow((uint)(n + 1), stringHeap, data, ref offset));
+                        _rows[n].Load(stringHeap, data, ref offset);
                     }
                 }
 #endif

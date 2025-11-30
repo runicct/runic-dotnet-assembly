@@ -52,13 +52,13 @@ namespace Runic.Dotnet
                     public TypeDefTable.TypeDefTableRow EnclosingClass { get { return _enclosingClass; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public NestedClassTableRow(uint row, TypeDefTable.TypeDefTableRow nestedClass, TypeDefTable.TypeDefTableRow enclosingClass)
+                    internal NestedClassTableRow(uint row, TypeDefTable.TypeDefTableRow nestedClass, TypeDefTable.TypeDefTableRow enclosingClass)
                     {
                         _row = row;
                         _nestedClass = nestedClass;
                         _enclosingClass = enclosingClass;
                     }
-                    public NestedClassTableRow(uint row, TypeDefTable typeDefTable, System.IO.BinaryReader reader)
+                    internal NestedClassTableRow(uint row, TypeDefTable typeDefTable, System.IO.BinaryReader reader)
                     {
                         _row = row;
                         uint nestedClassIndex = 0; if (typeDefTable.LargeIndices) { nestedClassIndex = reader.ReadUInt32(); } else { nestedClassIndex = reader.ReadUInt16(); }
@@ -67,7 +67,7 @@ namespace Runic.Dotnet
                         _enclosingClass = typeDefTable[enclosingClassIndex];
                     }
 #if NET6_0_OR_GREATER
-                    public NestedClassTableRow(uint row, TypeDefTable typeDefTable, Span<byte> data, ref uint offset)
+                    internal NestedClassTableRow(uint row, TypeDefTable typeDefTable, Span<byte> data, ref uint offset)
                     {
                         _row = row;
                         uint nestedClassIndex = 0; if (typeDefTable.LargeIndices) { nestedClassIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nestedClassIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }

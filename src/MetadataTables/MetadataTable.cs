@@ -23,6 +23,7 @@
  */
 
 using System.IO;
+using static Runic.Dotnet.Assembly.MetadataTable;
 
 namespace Runic.Dotnet
 {
@@ -126,6 +127,7 @@ namespace Runic.Dotnet
 
                 MetadataTable[] tables = new MetadataTable[tableCount];
                 FieldTable fieldTable = null;
+                ModuleTable moduleTable = null;
                 MethodDefTable? methodDefTable = null;
                 ParamTable? paramTable = null;
                 DocumentTable? documentTable = null;
@@ -133,9 +135,17 @@ namespace Runic.Dotnet
                 LocalConstantTable? localConstantTable = null;
                 ImportScopeTable? importScopeTable = null;
                 TypeDefTable? typeDefTable = null;
+                TypeRefTable? typeRefTable = null;
+                TypeSpecTable? typeSpecTable = null;
+                ModuleRefTable? moduleRefTable = null;
+                AssemblyRefTable? assemblyRefTable = null;
                 fieldTable = new FieldTable(rows[0x4]);
                 methodDefTable = new MethodDefTable(rows[0x6]);
                 paramTable = new ParamTable(rows[0x8]);
+                if ((validTables & (1UL << 0x01)) != 0) { typeRefTable = new TypeRefTable(rows[0x01]); }
+                if ((validTables & (1UL << 0x1A)) != 0) { moduleRefTable = new ModuleRefTable(rows[0x1A]); }
+                if ((validTables & (1UL << 0x1B)) != 0) { typeSpecTable = new TypeSpecTable(rows[0x1B]); }
+                if ((validTables & (1UL << 0x23)) != 0) { assemblyRefTable = new AssemblyRefTable(rows[0x23]); }
                 if ((validTables & (1UL << 0x33)) != 0) { localVariableTable = new LocalVariableTable(rows[0x33]); }
                 if ((validTables & (1UL << 0x34)) != 0) { localConstantTable = new LocalConstantTable(rows[0x34]); }
                 if ((validTables & (1UL << 0x35)) != 0) { importScopeTable = new ImportScopeTable(rows[0x35]); }
@@ -146,9 +156,9 @@ namespace Runic.Dotnet
                     {
                         switch (n)
                         {
-                            case 0x00: ModuleTable moduleTable = new ModuleTable(rows[n], stringHeap, GUIDHeap, data, ref offset); tables[table] = moduleTable; break;
-                            case 0x01: TypeRefTable typeRefTable = new TypeRefTable(rows[n], stringHeap, data, ref offset); tables[table] = typeRefTable; break;
-                            case 0x02: typeDefTable = new TypeDefTable(rows[n], stringHeap, fieldTable, methodDefTable, data, ref offset); tables[table] = typeDefTable; break;
+                            case 0x00: moduleTable = new ModuleTable(rows[n], stringHeap, GUIDHeap, data, ref offset); tables[table] = moduleTable; break;
+                            case 0x01: typeRefTable.Load(stringHeap, moduleTable, moduleRefTable, assemblyRefTable, data, ref offset); tables[table] = typeRefTable; break;
+                            case 0x02: typeDefTable = new TypeDefTable(rows[n], stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, data, ref offset); tables[table] = typeDefTable; break;
                             case 0x04: fieldTable.Load(stringHeap, blobHeap, data, ref offset); tables[table] = fieldTable; break;
                             case 0x06: methodDefTable.Load(stringHeap, blobHeap, paramTable, data, ref offset); tables[table] = methodDefTable; break;
                             case 0x08: paramTable.Load(stringHeap, data, ref offset); tables[table] = paramTable; break;
@@ -156,11 +166,11 @@ namespace Runic.Dotnet
                             case 0x0C: CustomAttributeTable customAttributeTable = new CustomAttributeTable(rows[n], blobHeap, data, ref offset); tables[table] = customAttributeTable; break;
                             case 0x0E: DeclSecurityTable declSecurityTable = new DeclSecurityTable(rows[n], blobHeap, data, ref offset); tables[table] = declSecurityTable; break;
                             case 0x11: StandAloneSigTable standAloneSigTable = new StandAloneSigTable(rows[n], blobHeap, data, ref offset); tables[table] = standAloneSigTable; break;
-                            case 0x1A: ModuleRefTable moduleRefTable = new ModuleRefTable(rows[n], stringHeap, data, ref offset); tables[table] = moduleRefTable; break;
+                            case 0x1A: moduleRefTable.Load(stringHeap, data, ref offset); tables[table] = moduleRefTable; break;
                             case 0x1C: ImplMapTable implMapTable = new ImplMapTable(rows[n], stringHeap, data, ref offset); tables[table] = implMapTable; break;
                             case 0x1D: FieldRVATable fieldRVATable = new FieldRVATable(rows[n], fieldTable, data, ref offset); tables[table] = fieldRVATable; break;
                             case 0x20: AssemblyTable assemblyTable = new AssemblyTable(rows[n], stringHeap, blobHeap, data, ref offset); tables[table] = assemblyTable; break;
-                            case 0x23: AssemblyRefTable assemblyRefTable = new AssemblyRefTable(rows[n], stringHeap, blobHeap, data, ref offset); tables[table] = assemblyRefTable; break;
+                            case 0x23: assemblyRefTable.Load(stringHeap, blobHeap, data, ref offset); tables[table] = assemblyRefTable; break;
                             case 0x29: NestedClassTable nestedClassTable = new NestedClassTable(rows[n], typeDefTable, data, ref offset); tables[table] = nestedClassTable; break;
                             case 0x30: documentTable = new DocumentTable(rows[n], blobHeap, GUIDHeap, data, ref offset); tables[table] = documentTable; break;
                             case 0x31: MethodDebugInformationTable methodDebugInformationTable = new MethodDebugInformationTable(rows[n], documentTable, blobHeap, data, ref offset); tables[table] = methodDebugInformationTable; break;
@@ -213,6 +223,11 @@ namespace Runic.Dotnet
                 LocalConstantTable? localConstantTable = null;
                 ImportScopeTable? importScopeTable = null;
                 TypeDefTable? typeDefTable = null;
+                TypeRefTable? typeRefTable = null;
+                TypeSpecTable? typeSpecTable = null;
+                ModuleTable? moduleTable = null;
+                ModuleRefTable? moduleRefTable = null;
+                AssemblyRefTable? assemblyRefTable = null;
 #else
                 FieldTable fieldTable = null;
                 MethodDefTable methodDefTable = null;
@@ -222,10 +237,19 @@ namespace Runic.Dotnet
                 LocalConstantTable localConstantTable = null;
                 ImportScopeTable importScopeTable = null;
                 TypeDefTable typeDefTable = null;
+                TypeRefTable typeRefTable = null;
+                TypeSpecTable typeSpecTable = null;
+                ModuleTable moduleTable = null;
+                ModuleRefTable moduleRefTable = null;
+                AssemblyRefTable assemblyRefTable = null;
 #endif
                 fieldTable = new FieldTable(rows[0x4]);
                 methodDefTable = new MethodDefTable(rows[0x6]);
                 paramTable = new ParamTable(rows[0x8]);
+                if ((validTables & (1UL << 0x01)) != 0) { typeRefTable = new TypeRefTable(rows[0x01]); }
+                if ((validTables & (1UL << 0x1A)) != 0) { moduleRefTable = new ModuleRefTable(rows[0x1A]); }
+                if ((validTables & (1UL << 0x1B)) != 0) { typeSpecTable = new TypeSpecTable(rows[0x1B]); }
+                if ((validTables & (1UL << 0x23)) != 0) { assemblyRefTable = new AssemblyRefTable(rows[0x23]); }
                 if ((validTables & (1UL << 0x33)) != 0) { localVariableTable = new LocalVariableTable(rows[0x33]); }
                 if ((validTables & (1UL << 0x35)) != 0) { importScopeTable = new ImportScopeTable(rows[0x35]); }
 
@@ -235,9 +259,9 @@ namespace Runic.Dotnet
                     {
                         switch (n)
                         {
-                            case 0x00: ModuleTable moduleTable = new ModuleTable(rows[n], stringHeap, GUIDHeap, reader); tables[table] = moduleTable; break;
-                            case 0x01: TypeRefTable typeRefTable = new TypeRefTable(rows[n], stringHeap, reader); tables[table] = typeRefTable; break;
-                            case 0x02: typeDefTable = new TypeDefTable(rows[n], stringHeap, fieldTable, methodDefTable, reader); tables[table] = typeDefTable; break;
+                            case 0x00: moduleTable = new ModuleTable(rows[n], stringHeap, GUIDHeap, reader); tables[table] = moduleTable; break;
+                            case 0x01: typeRefTable.Load(stringHeap, moduleTable, moduleRefTable, assemblyRefTable, reader); tables[table] = typeRefTable; break;
+                            case 0x02: typeDefTable = new TypeDefTable(rows[n], stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, reader); tables[table] = typeDefTable; break;
                             case 0x04: fieldTable.Load(stringHeap, blobHeap, reader); tables[table] = fieldTable; break;
                             case 0x06: methodDefTable.Load(stringHeap, blobHeap, paramTable, reader); tables[table] = methodDefTable; break;
                             case 0x08: paramTable.Load(stringHeap, reader); tables[table] = paramTable; break;
@@ -245,11 +269,11 @@ namespace Runic.Dotnet
                             case 0x0C: CustomAttributeTable customAttributeTable = new CustomAttributeTable(rows[n], blobHeap, reader); tables[table] = customAttributeTable; break;
                             case 0x0E: DeclSecurityTable declSecurityTable = new DeclSecurityTable(rows[n], blobHeap, reader); tables[table] = declSecurityTable; break;
                             case 0x11: StandAloneSigTable standAloneSigTable = new StandAloneSigTable(rows[n], blobHeap, reader); tables[table] = standAloneSigTable; break;
-                            case 0x1A: ModuleRefTable moduleRefTable = new ModuleRefTable(rows[n], stringHeap, reader); tables[table] = moduleRefTable; break;
+                            case 0x1A: moduleRefTable.Load(stringHeap, reader); tables[table] = moduleRefTable; break;
                             case 0x1C: ImplMapTable implMapTable = new ImplMapTable(rows[n], stringHeap, reader); tables[table] = implMapTable; break;
                             case 0x1D: FieldRVATable fieldRVATable = new FieldRVATable(rows[n], fieldTable, reader); tables[table] = fieldRVATable; break;
                             case 0x20: AssemblyTable assemblyTable = new AssemblyTable(rows[n], stringHeap, blobHeap, reader); tables[table] = assemblyTable; break;
-                            case 0x23: AssemblyRefTable assemblyRefTable = new AssemblyRefTable(rows[n], stringHeap, blobHeap, reader); tables[table] = assemblyRefTable; break;
+                            case 0x23: assemblyRefTable.Load(stringHeap, blobHeap, reader); tables[table] = assemblyRefTable; break;
                             case 0x29: NestedClassTable nestedClassTable = new NestedClassTable(rows[n], typeDefTable, reader); tables[table] = nestedClassTable; break;
                             case 0x30: documentTable = new DocumentTable(rows[n], blobHeap, GUIDHeap, reader); tables[table] = documentTable; break;
                             case 0x31: MethodDebugInformationTable methodDebugInformationTable = new MethodDebugInformationTable(rows[n], documentTable, blobHeap, reader); tables[table] = methodDebugInformationTable; break;
@@ -270,6 +294,7 @@ namespace Runic.Dotnet
                 ModuleTable? moduleTable = null;
                 TypeRefTable? typeRefTable = null;
                 TypeDefTable? typeDefTable = null;
+                TypeSpecTable? typeSpecTable = null;
                 FieldTable? fieldTable = null;
                 MethodDefTable? methodDefTable = null;
                 ParamTable? paramTable = null;
@@ -293,6 +318,7 @@ namespace Runic.Dotnet
                 ModuleTable moduleTable = null;
                 TypeRefTable typeRefTable = null;
                 TypeDefTable typeDefTable = null;
+                TypeSpecTable typeSpecTable = null;
                 FieldTable fieldTable = null;
                 MethodDefTable methodDefTable = null;
                 ParamTable paramTable = null;
@@ -332,6 +358,7 @@ namespace Runic.Dotnet
                         case StandAloneSigTable table: if (standAloneSigTable != null) { throw new System.Exception("More than one StandAloneSig Table was provided"); } standAloneSigTable = table; rows[0x11] = table.Rows; validTables |= (1UL << 0x11); break;
                         case ModuleRefTable table: if (moduleRefTable != null) { throw new System.Exception("More than one ModuleRef Table was provided"); } moduleRefTable = table; rows[0x1A] = table.Rows; validTables |= (1UL << 0x1A); break;
                         case ImplMapTable table: if (implMapTable != null) { throw new System.Exception("More than one ImplMap Table was provided"); } implMapTable = table; rows[0x1C] = table.Rows; validTables |= (1UL << 0x1C); break;
+                        case TypeSpecTable table: if (typeSpecTable != null) { throw new System.Exception("More than one TypeSpec Table was provided"); } typeSpecTable = table; rows[0x1B] = table.Rows; validTables |= (1UL << 0x1B); break;
                         case FieldRVATable table: if (fieldRVATable != null) { throw new System.Exception("More than one FieldRVA Table was provided"); } fieldRVATable = table; rows[0x1D] = table.Rows; validTables |= (1UL << 0x1D); break;
                         case AssemblyTable table: if (assemblyTable != null) { throw new System.Exception("More than one Assembly Table was provided"); } assemblyTable = table; rows[0x20] = table.Rows; validTables |= (1UL << 0x20); break;
                         case AssemblyRefTable table: if (assemblyRefTable != null) { throw new System.Exception("More than one AssemblyRef Table was provided"); } assemblyRefTable = table; rows[0x23] = table.Rows; validTables |= (1UL << 0x23); break;
@@ -373,6 +400,7 @@ namespace Runic.Dotnet
                             case 0x0E: binaryWriter.Write(declSecurityTable.Rows); break;
                             case 0x11: binaryWriter.Write(standAloneSigTable.Rows); break;
                             case 0x1A: binaryWriter.Write(moduleRefTable.Rows); break;
+                            case 0x1B: binaryWriter.Write(typeSpecTable.Rows); break;
                             case 0x1C: binaryWriter.Write(implMapTable.Rows); break;
                             case 0x1D: binaryWriter.Write(fieldRVATable.Rows); break;
                             case 0x20: binaryWriter.Write(assemblyTable.Rows); break;
@@ -396,15 +424,16 @@ namespace Runic.Dotnet
                         switch (n)
                         {
                             case 0x00: moduleTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
-                            case 0x01: typeRefTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
-                            case 0x02: typeDefTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
+                            case 0x01: typeRefTable.Save(stringHeap, blobHeap, GUIDHeap, moduleTable, moduleRefTable, assemblyRefTable, binaryWriter); break;
+                            case 0x02: typeDefTable.Save(stringHeap, blobHeap, GUIDHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, binaryWriter); break;
                             case 0x04: fieldTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
-                            case 0x06: methodDefTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
+                            case 0x06: methodDefTable.Save(stringHeap, blobHeap, GUIDHeap, paramTable, binaryWriter); break;
                             case 0x08: paramTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
                             case 0x0A: memberRefTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
                             case 0x0C: customAttributeTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
                             case 0x0E: declSecurityTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
                             case 0x11: standAloneSigTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
+                            case 0x1B: typeSpecTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
                             case 0x1A: moduleRefTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
                             case 0x1C: implMapTable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;
                             case 0x1D: fieldRVATable.Save(stringHeap, blobHeap, GUIDHeap, binaryWriter); break;

@@ -68,7 +68,7 @@ namespace Runic.Dotnet
                         _row = row;
                         _parent = parent;
                     }
-                    public FieldTableRow(FieldTable parent, uint row, FieldAttributes fieldAttribute, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+                    internal FieldTableRow(FieldTable parent, uint row, FieldAttributes fieldAttribute, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
                     {
                         _row = row;
                         _attributes = fieldAttribute;
@@ -116,7 +116,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                internal FieldTable()
+                public FieldTable()
                 {
                 }
                 internal FieldTable(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)

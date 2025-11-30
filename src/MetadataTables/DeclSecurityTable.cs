@@ -55,13 +55,13 @@ namespace Runic.Dotnet
                     public Heap.BlobHeap.Blob PermissionSet { get { return _permissionSet; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public DeclSecurityTableRow(uint row, ushort action, Heap.BlobHeap.Blob permissionSet)
+                    internal DeclSecurityTableRow(uint row, ushort action, Heap.BlobHeap.Blob permissionSet)
                     {
                         _row = row;
                         _action = action;
                         _permissionSet = permissionSet;
                     }
-                    public DeclSecurityTableRow(uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    internal DeclSecurityTableRow(uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
                     {
                         _row = row;
                         _action = reader.ReadUInt16();
@@ -70,7 +70,7 @@ namespace Runic.Dotnet
                         _permissionSet = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
                     }
 #if NET6_0_OR_GREATER
-                    public DeclSecurityTableRow(uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                    internal DeclSecurityTableRow(uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
                         _row = row;
                         _action = BitConverterLE.ToUInt16(data, offset); offset += 2;

@@ -52,13 +52,13 @@ namespace Runic.Dotnet
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    public FieldRVATableRow(uint row, uint relativeVirtualAddress, FieldTable.FieldTableRow Field)
+                    internal FieldRVATableRow(uint row, uint relativeVirtualAddress, FieldTable.FieldTableRow Field)
                     {
                         _row = row;
                         _rva = relativeVirtualAddress;
                         _field = Field;
                     }
-                    public FieldRVATableRow(uint row, FieldTable fieldTable, BinaryReader reader)
+                    internal FieldRVATableRow(uint row, FieldTable fieldTable, BinaryReader reader)
                     {
                         _row = row;
                         _rva = reader.ReadUInt32();
@@ -66,7 +66,7 @@ namespace Runic.Dotnet
                         _field = fieldTable[fieldIndex];
                     }
 #if NET6_0_OR_GREATER
-                    public FieldRVATableRow(uint row, FieldTable fieldTable, Span<byte> data, ref uint offset)
+                    internal FieldRVATableRow(uint row, FieldTable fieldTable, Span<byte> data, ref uint offset)
                     {
                         _row = row;
                         _rva = BitConverterLE.ToUInt32(data, offset); offset += 4;

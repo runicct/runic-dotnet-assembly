@@ -37,7 +37,7 @@ namespace Runic.Dotnet
         {
             public class ModuleTable : MetadataTable
             {
-                public class ModuleTableRow : MetadataTableRow
+                public class ModuleTableRow : MetadataTableRow, IResolutionScope
                 {
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }

@@ -58,6 +58,29 @@ namespace Runic.Dotnet
                     public MethodAttributes Attributes { get { return _attributes; } }
                     ParamTable.ParamTableRow _parameterList;
                     public ParamTable.ParamTableRow ParameterList { get { return _parameterList; } }
+                    /// <summary>
+                    /// Return the next ParamTableRow after this method's last parameter, or null if this is the last method with parameters.
+                    /// </summary>
+#if NET6_0_OR_GREATER
+                    public ParamTable.ParamTableRow? ParameterListEnd
+#else
+                    public ParamTable.ParamTableRow ParameterListEnd
+#endif
+                    {
+                        get
+                        {
+                            for (uint n = _row + 1; n <= _parent.Rows; n++)
+                            {
+                                MethodDefTableRow methodRow = _parent[n];
+                                if (methodRow.ParameterList != null)
+                                {
+                                    return methodRow.ParameterList;
+                                }
+                            }
+                            return null;
+                        }
+                    }
+
                     uint _row;
                     public override uint Row { get { return _row; } }
                     internal MethodDefTableRow(MethodDefTable parent, uint row, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
@@ -120,7 +143,11 @@ namespace Runic.Dotnet
                         }
                     }
 #endif
-                    internal void Save(BinaryWriter binaryWriter)
+#if NET6_0_OR_GREATER
+                    internal void Save(ParamTable? paramTable, BinaryWriter binaryWriter)
+#else
+                    internal void Save(ParamTable paramTable, BinaryWriter binaryWriter)
+#endif
                     {
                         lock (this)
                         {
@@ -129,7 +156,27 @@ namespace Runic.Dotnet
                             binaryWriter.Write((ushort)_attributes);
                             if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
                             if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((ushort)_signature.Index); }
-                            if (_parameterList.Parent.LargeIndices) { binaryWriter.Write((uint)_parameterList.Row); } else { binaryWriter.Write((ushort)_parameterList.Row); }
+                            if (_parameterList == null)
+                            {
+#if NET6_0_OR_GREATER
+                                ParamTable.ParamTableRow? paramListEnd = ParameterListEnd;
+#else
+                                ParamTable.ParamTableRow paramListEnd = ParameterListEnd;
+#endif
+                                if (paramListEnd != null)
+                                {
+                                    if (paramListEnd.Parent.LargeIndices) { binaryWriter.Write((uint)(paramListEnd.Row)); } else { binaryWriter.Write((ushort)(paramListEnd.Row)); }
+                                }
+                                else
+                                {
+                                    if (paramTable == null) { binaryWriter.Write((ushort)(1)); }
+                                    else if (paramTable.LargeIndices) { binaryWriter.Write((uint)(paramTable.Rows + 1)); } else { binaryWriter.Write((ushort)(paramTable.Rows + 1)); }
+                                }
+                            }
+                            else
+                            {
+                                if (_parameterList.Parent.LargeIndices) { binaryWriter.Write((uint)_parameterList.Row); } else { binaryWriter.Write((ushort)_parameterList.Row); }
+                            }
                         }
                     }
                 }
@@ -166,11 +213,19 @@ namespace Runic.Dotnet
                 }
                 internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
+                    Save(stringHeap, blobHeap, GUIDHeap, null, binaryWriter);
+                }
+#if NET6_0_OR_GREATER
+                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, ParamTable? paramTable, BinaryWriter binaryWriter)
+#else
+                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, ParamTable paramTable, BinaryWriter binaryWriter)
+#endif
+                {
                     lock (this)
                     {
                         for (int n = 0; n < _rows.Count; n++)
                         {
-                            _rows[n].Save(binaryWriter);
+                            _rows[n].Save(paramTable, binaryWriter);
                         }
                     }
                 }
