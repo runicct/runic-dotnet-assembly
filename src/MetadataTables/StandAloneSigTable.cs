@@ -37,7 +37,7 @@ namespace Runic.Dotnet
         {
             public class StandAloneSigTable : MetadataTable
             {
-                public class StandAloneSigTableRow : MetadataTableRow
+                public class StandAloneSigTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     Heap.BlobHeap.Blob _signature;
                     public Heap.BlobHeap.Blob Signature { get { return _signature; } }
@@ -76,7 +76,7 @@ namespace Runic.Dotnet
                 {
                     get { lock (this) { return _rows[row - 1]; } }
                 }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

@@ -43,7 +43,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
                 public TypeDefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class TypeDefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec
+                public class TypeDefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IMemberRefParent, IHasCustomAttribute, ITypeDefOrMethodDef
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -225,14 +225,10 @@ namespace Runic.Dotnet
                         }
                     }
                 }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
-                {
-                    Save(stringHeap, blobHeap, GUIDHeap, null, null, null, null, binaryWriter);
-                }
 #if NET6_0_OR_GREATER
-                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
+                internal void Save(FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
 #else
-                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable,  BinaryWriter binaryWriter)
+                internal void Save(FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable,  BinaryWriter binaryWriter)
 #endif
                 {
                     for (int n = 0; n < _rows.Count; n++)

@@ -41,10 +41,10 @@ namespace Runic.Dotnet
                 public override bool Sorted { get { return false; } }
                 public MethodDefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
 
-                public class MethodDefTableRow : MetadataTableRow
+                public class MethodDefTableRow : MetadataTableRow, IMemberRefParent, ICustomAttributeConstructor, IHasCustomAttribute, ITypeDefOrMethodDef
                 {
                     MethodDefTable _parent;
-                    public MethodDefTable Parent { get { return _parent; } }
+                    internal MethodDefTable Parent { get { return _parent; } }
                     MethodImplAttributes _implAttributes;
                     public MethodImplAttributes ImplAttributes { get { return _implAttributes; } }
                     public override uint Length { get { return 6; } }
@@ -211,14 +211,10 @@ namespace Runic.Dotnet
                         _rows.Add(new MethodDefTableRow(this, (uint)(n + 1)));
                     }
                 }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
-                {
-                    Save(stringHeap, blobHeap, GUIDHeap, null, binaryWriter);
-                }
 #if NET6_0_OR_GREATER
-                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, ParamTable? paramTable, BinaryWriter binaryWriter)
+                internal void Save(ParamTable? paramTable, BinaryWriter binaryWriter)
 #else
-                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, ParamTable paramTable, BinaryWriter binaryWriter)
+                internal void Save(ParamTable paramTable, BinaryWriter binaryWriter)
 #endif
                 {
                     lock (this)

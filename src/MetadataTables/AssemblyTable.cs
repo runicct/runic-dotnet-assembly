@@ -34,7 +34,7 @@ namespace Runic.Dotnet
             public class AssemblyTable : MetadataTable
             {
                 List<AssemblyTableRow> _rows = new List<AssemblyTableRow>();
-                public class AssemblyTableRow : MetadataTableRow
+                public class AssemblyTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -68,10 +68,12 @@ namespace Runic.Dotnet
                         _culture = culture;
                         _publicKey = publickey;
                     }
-                    internal AssemblyTableRow(uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    internal AssemblyTableRow(uint row)
                     {
                         _row = row;
-
+                    }
+                    internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    {
                         uint hashAlgorithm = reader.ReadUInt32();
                         ushort assemblyVersionMajor = reader.ReadUInt16();
                         ushort assemblyVersionMinor = reader.ReadUInt16();
@@ -87,10 +89,8 @@ namespace Runic.Dotnet
                         _culture = cultureIndex == 0 ? null : new Heap.StringHeap.String(stringHeap, cultureIndex);
                     }
 #if NET6_0_OR_GREATER
-                    internal AssemblyTableRow(uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                    internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
-                        _row = row;
-
                         uint hashAlgorithm = BitConverterLE.ToUInt32(data, offset); offset += 4;
                         ushort assemblyVersionMajor = BitConverterLE.ToUInt16(data, offset); offset += 2;
                         ushort assemblyVersionMinor = BitConverterLE.ToUInt16(data, offset); offset += 2;
@@ -127,7 +127,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public AssemblyTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public override bool Sorted { get { return false; } }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
@@ -150,20 +150,27 @@ namespace Runic.Dotnet
                 public AssemblyTable() : base()
                 {
                 }
-                internal AssemblyTable(uint rows, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader) : base()
+                internal AssemblyTable(uint rows) : base()
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new AssemblyTableRow((uint)(n + 1), stringHeap, blobHeap, reader));
+                        _rows.Add(new AssemblyTableRow((uint)(n + 1)));
+                    }
+                }
+                internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                {
+                    for (int n = 0; n < _rows.Count; n++)
+                    {
+                        _rows[n].Load(stringHeap, blobHeap, reader);
                     }
                 }
 #if NET6_0_OR_GREATER
 
-                internal AssemblyTable(uint rows, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset) : base()
+                internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                 {
-                    for (int n = 0; n < rows; n++)
+                    for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows.Add(new AssemblyTableRow((uint)(n + 1), stringHeap, blobHeap, data, ref offset));
+                        _rows[n].Load(stringHeap, blobHeap, data, ref offset);
                     }
                 }
 #endif

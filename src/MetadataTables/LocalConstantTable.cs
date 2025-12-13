@@ -82,7 +82,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public LocalConstantTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public override bool Sorted { get { return false; } }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

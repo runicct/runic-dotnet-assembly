@@ -56,10 +56,10 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class ParamTableRow : MetadataTableRow
+                public class ParamTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     ParamTable _parent;
-                    public ParamTable Parent { get { return _parent; } }
+                    internal ParamTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     public override uint Length { get { return 3; } }
@@ -106,7 +106,7 @@ namespace Runic.Dotnet
                         if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((short)_name.Index); }
                     }
                 }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

@@ -43,7 +43,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
                 public TypeSpecTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class TypeSpecTableRow : MetadataTableRow, ITypeDefOrRefOrSpec
+                public class TypeSpecTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IMemberRefParent, IHasCustomAttribute
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -91,7 +91,7 @@ namespace Runic.Dotnet
                         if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((ushort)_signature.Index); }
                     }
                 }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
@@ -125,7 +125,7 @@ namespace Runic.Dotnet
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal TypeSpecTable(uint rows, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                internal void Load(Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

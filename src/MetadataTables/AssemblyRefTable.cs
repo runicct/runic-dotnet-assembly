@@ -38,7 +38,7 @@ namespace Runic.Dotnet
             public class AssemblyRefTable : MetadataTable
             {
                 List<AssemblyRefTableRow> _rows = new List<AssemblyRefTableRow>();
-                public class AssemblyRefTableRow : MetadataTableRow, IResolutionScope
+                public class AssemblyRefTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute
                 {
                     System.Version _version;
                     public System.Version Version { get { return _version; } }
@@ -115,7 +115,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public AssemblyRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

@@ -26,13 +26,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using System.IO;
 
 namespace Runic.Dotnet
 {
@@ -40,64 +38,72 @@ namespace Runic.Dotnet
     {
         public partial class MetadataTable
         {
-            public class FieldTable : MetadataTable
+            public class PropertyTable : MetadataTable
             {
-                List<FieldTableRow> _rows = new List<FieldTableRow>();
-                public override int ID { get { return 0x04; } }
+                List<PropertyTableRow> _rows = new List<PropertyTableRow>();
+                public override int ID { get { return 0x17; } }
                 public override uint Columns { get { return 3; } }
-                public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
+                public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
-                public FieldTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-
-                public class FieldTableRow : MetadataTableRow, IHasCustomAttribute
+                public PropertyTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
+                public PropertyTableRow Add(PropertyAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
                 {
-                    int _id;
-                    FieldTable _parent;
-                    public FieldTable Parent { get { return _parent; } }
-                    FieldAttributes _attributes;
-                    public FieldAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
+                    lock (this)
+                    {
+                        PropertyTableRow row = new PropertyTableRow(this, (uint)(_rows.Count + 1), attributes, name, signature);
+                        _rows.Add(row);
+                        return row;
+                    }
+                }
+                public class PropertyTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics
+                {
+                    PropertyTable _parent;
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.BlobHeap.Blob _signature;
                     public Heap.BlobHeap.Blob Signature { get { return _signature; } }
                     public override uint Length { get { return 3; } }
+                    PropertyAttributes _attributes;
+                    public PropertyAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal FieldTableRow(FieldTable parent, uint row)
+                    internal PropertyTableRow(PropertyTable parent, uint row, PropertyAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
                     {
-                        _row = row;
                         _parent = parent;
-                    }
-                    internal FieldTableRow(FieldTable parent, uint row, FieldAttributes fieldAttribute, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
-                    {
-                        _row = row;
-                        _attributes = fieldAttribute;
                         _name = name;
+                        _row = row;
+                        _attributes = attributes;
                         _signature = signature;
+                    }
+                    internal PropertyTableRow(PropertyTable parent, uint row)
+                    {
+                        _parent = parent;
+                        _row = row;
                     }
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
                     {
-                        _attributes = (FieldAttributes)reader.ReadUInt16();
+                        _attributes = (PropertyAttributes)reader.ReadUInt16();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        uint blobIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _signature = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
+                        uint signatureIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
+                        _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
                     }
 #if NET6_0_OR_GREATER
+
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
-                        _attributes = (FieldAttributes)BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        _attributes = (PropertyAttributes)BitConverterLE.ToUInt16(data, offset); offset += 2;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        uint blobIndex = 0; if (blobHeap.LargeIndices) { blobIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { blobIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _signature = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
+                        uint signatureIndex = 0; if (blobHeap.LargeIndices) { signatureIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { signatureIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
                     }
 #endif
-                    internal void Save(BinaryWriter writer)
+                    internal void Save(BinaryWriter binaryWriter)
                     {
-                        writer.Write((ushort)_attributes);
-                        writer.Write((uint)_name.Index);
-                        writer.Write((uint)_signature.Index);
+                        binaryWriter.Write((ushort)_attributes);
+                        if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((short)_name.Index); }
+                        if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((short)_signature.Index); }
                     }
                 }
                 internal void Save(BinaryWriter binaryWriter)
@@ -107,49 +113,26 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                public FieldTableRow Add(FieldAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
-                {
-                    lock (this)
-                    {
-                        FieldTableRow row = new FieldTableRow(this, (uint)(_rows.Count + 1), attributes, name, signature);
-                        _rows.Add(row);
-                        return row;
-                    }
-                }
-                public FieldTable()
+                public PropertyTable()
                 {
                 }
-                internal FieldTable(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
+                internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
                 {
                     int rows = _rows.Count;
-                    for (int n = 0; n < rows; n++)
-                    {
-                        _rows[n].Load(stringHeap, blobHeap, reader);
-                    }
+                    for (int n = 0; n < rows; n++) { _rows[n].Load(stringHeap, blobHeap, reader); }
                 }
 #if NET6_0_OR_GREATER
                 internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                 {
                     int rows = _rows.Count;
-                    for (int n = 0; n < rows; n++)
-                    {
-                        _rows[n].Load(stringHeap, blobHeap, data, ref offset);
-                    }
+                    for (int n = 0; n < rows; n++) { _rows[n].Load(stringHeap, blobHeap, data, ref offset); }
                 }
 #endif
-                internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
-                {
-                    int rows = _rows.Count;
-                    for (int n = 0; n < rows; n++)
-                    {
-                        _rows[n].Load(stringHeap, blobHeap, reader);
-                    }
-                }
-                internal FieldTable(uint rows)
+                internal PropertyTable(uint rows)
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new FieldTableRow(this, (uint)(n + 1)));
+                        _rows.Add(new PropertyTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

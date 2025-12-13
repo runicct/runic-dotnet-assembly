@@ -39,7 +39,7 @@ namespace Runic.Dotnet
             {
                 List<TypeRefTableRow> _rows = new List<TypeRefTableRow>();
                 public TypeRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class TypeRefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IResolutionScope
+                public class TypeRefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IResolutionScope, IMemberRefParent, IHasCustomAttribute
                 {
                     TypeRefTable _parent;
                     Heap.StringHeap.String _name;
@@ -102,14 +102,10 @@ namespace Runic.Dotnet
                         if (_namespace.Heap.LargeIndices) { binaryWriter.Write(_namespace.Index); } else { binaryWriter.Write((ushort)_namespace.Index); }
                     }
                 }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
-                {
-                    Save(stringHeap, blobHeap, GUIDHeap, null, null, null, binaryWriter);
-                }
 #if NET6_0_OR_GREATER
-                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, ModuleTable? moduleTable, ModuleRefTable? moduleRefTable, AssemblyRefTable? assemblyRefTable, BinaryWriter binaryWriter)
+                internal void Save(ModuleTable? moduleTable, ModuleRefTable? moduleRefTable, AssemblyRefTable? assemblyRefTable, BinaryWriter binaryWriter)
 #else
-                internal void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, ModuleTable moduleTable, ModuleRefTable moduleRefTable, AssemblyRefTable assemblyRefTable, BinaryWriter binaryWriter)
+                internal void Save(ModuleTable moduleTable, ModuleRefTable moduleRefTable, AssemblyRefTable assemblyRefTable, BinaryWriter binaryWriter)
 #endif
                 {
                     for (int n = 0; n < _rows.Count; n++)

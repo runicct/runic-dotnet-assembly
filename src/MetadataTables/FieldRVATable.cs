@@ -80,7 +80,7 @@ namespace Runic.Dotnet
                         if (_field.Parent.LargeIndices) { writer.Write((uint)_field.Row); } else { writer.Write((ushort)_field.Row); }
                     }
                 }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {

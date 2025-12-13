@@ -28,10 +28,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using System.IO;
 
 namespace Runic.Dotnet
@@ -40,64 +38,73 @@ namespace Runic.Dotnet
     {
         public partial class MetadataTable
         {
-            public class FieldTable : MetadataTable
+            public class FileTable : MetadataTable
             {
-                List<FieldTableRow> _rows = new List<FieldTableRow>();
-                public override int ID { get { return 0x04; } }
+                List<FileTableRow> _rows = new List<FileTableRow>();
+                public override int ID { get { return 0x26; } }
                 public override uint Columns { get { return 3; } }
-                public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
+                public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
-                public FieldTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-
-                public class FieldTableRow : MetadataTableRow, IHasCustomAttribute
+                public FileTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
+                public FileTableRow Add(FileAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob hashValue)
                 {
-                    int _id;
-                    FieldTable _parent;
-                    public FieldTable Parent { get { return _parent; } }
-                    FieldAttributes _attributes;
-                    public FieldAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
+                    lock (this)
+                    {
+                        FileTableRow row = new FileTableRow(this, (uint)(_rows.Count + 1), attributes, name, hashValue);
+                        _rows.Add(row);
+                        return row;
+                    }
+                }
+                public class FileTableRow : MetadataTableRow, IHasCustomAttribute
+                {
+                    FileTable _parent;
+                    internal FileTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
-                    Heap.BlobHeap.Blob _signature;
-                    public Heap.BlobHeap.Blob Signature { get { return _signature; } }
                     public override uint Length { get { return 3; } }
+                    Heap.BlobHeap.Blob _hashValue;
+                    public Heap.BlobHeap.Blob HashValue { get { return _hashValue; } }
+                    FileAttributes _attributes;
+                    public FileAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal FieldTableRow(FieldTable parent, uint row)
+                    internal FileTableRow(FileTable parent, uint row, FileAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob hashValue)
                     {
-                        _row = row;
                         _parent = parent;
-                    }
-                    internal FieldTableRow(FieldTable parent, uint row, FieldAttributes fieldAttribute, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
-                    {
-                        _row = row;
-                        _attributes = fieldAttribute;
                         _name = name;
-                        _signature = signature;
+                        _row = row;
+                        _attributes = attributes;
+                        _hashValue = hashValue;
+                    }
+                    internal FileTableRow(FileTable parent, uint row)
+                    {
+                        _parent = parent;
+                        _row = row;
                     }
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
                     {
-                        _attributes = (FieldAttributes)reader.ReadUInt16();
+                        _attributes = (FileAttributes)reader.ReadUInt32();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        uint blobIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _signature = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
+                        uint hashIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
+                        _hashValue = new Heap.BlobHeap.Blob(blobHeap, hashIndex);
                     }
 #if NET6_0_OR_GREATER
+
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
-                        _attributes = (FieldAttributes)BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        _attributes = (FileAttributes)BitConverterLE.ToUInt32(data, offset); offset += 4;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        uint blobIndex = 0; if (blobHeap.LargeIndices) { blobIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { blobIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _signature = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
+                        uint hashIndex = 0; if (blobHeap.LargeIndices) { hashIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { hashIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        _hashValue = new Heap.BlobHeap.Blob(blobHeap, hashIndex);
                     }
 #endif
-                    internal void Save(BinaryWriter writer)
+                    internal void Save(BinaryWriter binaryWriter)
                     {
-                        writer.Write((ushort)_attributes);
-                        writer.Write((uint)_name.Index);
-                        writer.Write((uint)_signature.Index);
+                        binaryWriter.Write((ushort)_attributes);
+                        if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((short)_name.Index); }
+                        if (_hashValue.Heap.LargeIndices) { binaryWriter.Write(_hashValue.Index); } else { binaryWriter.Write((short)_hashValue.Index); }
                     }
                 }
                 internal void Save(BinaryWriter binaryWriter)
@@ -107,49 +114,26 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
-                public FieldTableRow Add(FieldAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
-                {
-                    lock (this)
-                    {
-                        FieldTableRow row = new FieldTableRow(this, (uint)(_rows.Count + 1), attributes, name, signature);
-                        _rows.Add(row);
-                        return row;
-                    }
-                }
-                public FieldTable()
+                public FileTable()
                 {
                 }
-                internal FieldTable(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
+                internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
                 {
                     int rows = _rows.Count;
-                    for (int n = 0; n < rows; n++)
-                    {
-                        _rows[n].Load(stringHeap, blobHeap, reader);
-                    }
+                    for (int n = 0; n < rows; n++) { _rows[n].Load(stringHeap, blobHeap, reader); }
                 }
 #if NET6_0_OR_GREATER
                 internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                 {
                     int rows = _rows.Count;
-                    for (int n = 0; n < rows; n++)
-                    {
-                        _rows[n].Load(stringHeap, blobHeap, data, ref offset);
-                    }
+                    for (int n = 0; n < rows; n++) { _rows[n].Load(stringHeap, blobHeap, data, ref offset); }
                 }
 #endif
-                internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
-                {
-                    int rows = _rows.Count;
-                    for (int n = 0; n < rows; n++)
-                    {
-                        _rows[n].Load(stringHeap, blobHeap, reader);
-                    }
-                }
-                internal FieldTable(uint rows)
+                internal FileTable(uint rows)
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new FieldTableRow(this, (uint)(n + 1)));
+                        _rows.Add(new FileTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

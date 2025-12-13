@@ -37,7 +37,7 @@ namespace Runic.Dotnet
         {
             public class ModuleTable : MetadataTable
             {
-                public class ModuleTableRow : MetadataTableRow, IResolutionScope
+                public class ModuleTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute
                 {
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
@@ -91,7 +91,7 @@ namespace Runic.Dotnet
                 public override uint Columns { get { return 5; } }
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
-                internal override void Save(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
+                internal void Save(Heap.GUIDHeap GUIDHeap, BinaryWriter binaryWriter)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
