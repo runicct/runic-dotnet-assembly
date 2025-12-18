@@ -56,7 +56,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class ParamTableRow : MetadataTableRow, IHasCustomAttribute
+                public class ParamTableRow : MetadataTableRow, IHasCustomAttribute, IHasConstant, IHasFieldMarshal
                 {
                     ParamTable _parent;
                     internal ParamTable Parent { get { return _parent; } }

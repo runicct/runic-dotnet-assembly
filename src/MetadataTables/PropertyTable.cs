@@ -55,7 +55,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class PropertyTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics
+                public class PropertyTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics, IHasConstant
                 {
                     PropertyTable _parent;
                     Heap.StringHeap.String _name;

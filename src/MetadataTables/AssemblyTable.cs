@@ -34,7 +34,7 @@ namespace Runic.Dotnet
             public class AssemblyTable : MetadataTable
             {
                 List<AssemblyTableRow> _rows = new List<AssemblyTableRow>();
-                public class AssemblyTableRow : MetadataTableRow, IHasCustomAttribute
+                public class AssemblyTableRow : MetadataTableRow, IHasCustomAttribute, IHasDeclSecurity
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }

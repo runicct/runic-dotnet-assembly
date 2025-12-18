@@ -43,7 +43,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { lock (this) { return (uint)_rows.Count; } } }
                 public override bool Sorted { get { return false; } }
                 public TypeDefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class TypeDefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IMemberRefParent, IHasCustomAttribute, ITypeDefOrMethodDef
+                public class TypeDefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IMemberRefParent, IHasCustomAttribute, ITypeDefOrMethodDef, IHasDeclSecurity
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }

@@ -49,7 +49,7 @@ namespace Runic.Dotnet
                 public override bool Sorted { get { return false; } }
                 public FieldTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
 
-                public class FieldTableRow : MetadataTableRow, IHasCustomAttribute
+                public class FieldTableRow : MetadataTableRow, IHasCustomAttribute, IHasConstant, IHasFieldMarshal
                 {
                     int _id;
                     FieldTable _parent;

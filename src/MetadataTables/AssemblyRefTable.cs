@@ -38,7 +38,7 @@ namespace Runic.Dotnet
             public class AssemblyRefTable : MetadataTable
             {
                 List<AssemblyRefTableRow> _rows = new List<AssemblyRefTableRow>();
-                public class AssemblyRefTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute
+                public class AssemblyRefTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute, IImplementation
                 {
                     System.Version _version;
                     public System.Version Version { get { return _version; } }

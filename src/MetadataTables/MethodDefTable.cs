@@ -41,7 +41,7 @@ namespace Runic.Dotnet
                 public override bool Sorted { get { return false; } }
                 public MethodDefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
 
-                public class MethodDefTableRow : MetadataTableRow, IMemberRefParent, ICustomAttributeConstructor, IHasCustomAttribute, ITypeDefOrMethodDef
+                public class MethodDefTableRow : MetadataTableRow, IMemberRefParent, ICustomAttributeConstructor, IHasCustomAttribute, ITypeDefOrMethodDef, IMethodDefOrRef, IHasDeclSecurity
                 {
                     MethodDefTable _parent;
                     internal MethodDefTable Parent { get { return _parent; } }

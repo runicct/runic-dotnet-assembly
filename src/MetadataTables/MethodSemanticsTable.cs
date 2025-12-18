@@ -29,7 +29,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -82,7 +81,11 @@ namespace Runic.Dotnet
                         _parent = parent;
                         _row = row;
                     }
+#if NET6_0_OR_GREATER
                     internal void Load(MethodDefTable methodDefTable, EventTable? eventTable, PropertyTable? propertyTable, BinaryReader reader)
+#else
+                    internal void Load(MethodDefTable methodDefTable, EventTable eventTable, PropertyTable propertyTable, BinaryReader reader)
+#endif
                     {
                         _attributes = (MethodSemanticsAttributes)reader.ReadUInt16();
                         uint methodIndex = 0;
@@ -106,7 +109,12 @@ namespace Runic.Dotnet
 
                     }
 #endif
+
+#if NET6_0_OR_GREATER
                     internal void Save(EventTable? eventTable, PropertyTable? propertyTable, BinaryWriter binaryWriter)
+#else
+                    internal void Save(EventTable eventTable, PropertyTable propertyTable, BinaryWriter binaryWriter)
+#endif
                     {
                         binaryWriter.Write((ushort)_attributes);
                         if (_method.Parent.LargeIndices) { binaryWriter.Write(_method.Row); } else { binaryWriter.Write((ushort)_method.Row); }
@@ -114,7 +122,11 @@ namespace Runic.Dotnet
                         if (HasSemanticsDecodeLargeIndices(eventTable, propertyTable)) { binaryWriter.Write(associationTag); } else { binaryWriter.Write((ushort)associationTag); }
                     }
                 }
+#if NET6_0_OR_GREATER
                 internal void Save(EventTable? eventTable, PropertyTable? propertyTable, BinaryWriter binaryWriter)
+#else
+                internal void Save(EventTable eventTable, PropertyTable propertyTable, BinaryWriter binaryWriter)
+#endif
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
@@ -124,7 +136,11 @@ namespace Runic.Dotnet
                 public MethodSemanticsTable()
                 {
                 }
+#if NET6_0_OR_GREATER
                 internal void Load(MethodDefTable methodDefTable, EventTable? eventTable, PropertyTable? propertyTable, BinaryReader reader)
+#else
+                internal void Load(MethodDefTable methodDefTable, EventTable eventTable, PropertyTable propertyTable, BinaryReader reader)
+#endif
                 {
                     int rows = _rows.Count;
                     for (int n = 0; n < rows; n++) { _rows[n].Load(methodDefTable, eventTable, propertyTable, reader); }

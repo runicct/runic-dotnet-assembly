@@ -77,11 +77,26 @@
     <Compile Include="..\..\src\MetadataTables\DeclSecurityTable.cs">
       <Link>MetadataTable\DeclSecurityTable.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\MetadataTables\ConstantTable.cs">
+      <Link>MetadataTable\ConstantTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\ClassLayoutTable.cs">
+      <Link>MetadataTable\ClassLayoutTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\FieldMarshalTable.cs">
+      <Link>MetadataTable\FieldMarshalTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\FieldLayoutTable.cs">
+      <Link>MetadataTable\FieldLayoutTable.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\MetadataTables\FieldRVATable.cs">
       <Link>MetadataTable\FieldRVATable.cs</Link>
     </Compile>
     <Compile Include="..\..\src\MetadataTables\FieldTable.cs">
       <Link>MetadataTable\FieldTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\ManifestResourceTable.cs">
+      <Link>MetadataTable\ManifestResourceTable.cs</Link>
     </Compile>
     <Compile Include="..\..\src\MetadataTables\ImplMapTable.cs">
       <Link>MetadataTable\ImplMapTable.cs</Link>
@@ -116,8 +131,23 @@
     <Compile Include="..\..\src\MetadataTables\EventMapTable.cs">
       <Link>MetadataTable\EventMapTable.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\MetadataTables\ExportedTypeTable.cs">
+      <Link>MetadataTable\ExportedTypeTable.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\MetadataTables\GenericParamTable.cs">
       <Link>MetadataTable\GenericParamTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\GenericParamConstraintTable.cs">
+      <Link>MetadataTable\GenericParamConstraintTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\MethodSpecTable.cs">
+      <Link>MetadataTable\MethodSpecTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\MethodImplTable.cs">
+      <Link>MetadataTable\MethodImplTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\MethodSemanticsTable.cs">
+      <Link>MetadataTable\MethodSemanticsTable.cs</Link>
     </Compile>
     <Compile Include="..\..\src\MetadataTables\FileTable.cs">
       <Link>MetadataTable\FileTable.cs</Link>
@@ -176,8 +206,14 @@
     <Compile Include="..\..\src\GenericParamAttributes.cs">
       <Link>GenericParamAttributes.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\ManifestResourceAttributes.cs">
+      <Link>ManifestResourceAttributes.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\MethodFlags.cs">
       <Link>MethodFlags.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MethodSemanticsAttributes.cs">
+      <Link>MethodSemanticsAttributes.cs</Link>
     </Compile>
     <Compile Include="..\..\src\LocalVariableAttributes.cs">
       <Link>LocalVariableAttributes.cs</Link>

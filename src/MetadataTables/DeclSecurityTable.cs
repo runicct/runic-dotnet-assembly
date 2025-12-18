@@ -24,10 +24,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 
 namespace Runic.Dotnet
 {
@@ -43,81 +43,109 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public DeclSecurityTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class DeclSecurityTableRow : MetadataTableRow
+                public class DeclSecurityTableRow : MetadataTableRow, IHasCustomAttribute
                 {
-                    DeclSecurityTable _parent;
                     public override uint Length { get { return 3; } }
                     ushort _action;
                     public ushort Action { get { return _action; } }
-                    uint _hasDeclSecurityToken;
-                    public uint HasDeclSecurityToken { get { return _hasDeclSecurityToken; } }
+                    IHasDeclSecurity _parent;
+                    public IHasDeclSecurity Parent { get { return _parent; } }
                     Heap.BlobHeap.Blob _permissionSet;
                     public Heap.BlobHeap.Blob PermissionSet { get { return _permissionSet; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal DeclSecurityTableRow(uint row, ushort action, Heap.BlobHeap.Blob permissionSet)
+                    internal DeclSecurityTableRow(uint row)
+                    {
+                        _row = row;
+                    }
+                    internal DeclSecurityTableRow(uint row, ushort action, IHasDeclSecurity hasDeclSecurity, Heap.BlobHeap.Blob permissionSet)
                     {
                         _row = row;
                         _action = action;
+                        _parent = hasDeclSecurity;
                         _permissionSet = permissionSet;
                     }
-                    internal DeclSecurityTableRow(uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+#if NET6_0_OR_GREATER
+                    internal void Load(Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, MethodDefTable? methodDefTable, AssemblyTable? assemblyTable, System.IO.BinaryReader reader)
+#else
+                    internal void Load(Heap.BlobHeap blobHeap, TypeDefTable typeDefTable, MethodDefTable methodDefTable, AssemblyTable assemblyTable, System.IO.BinaryReader reader)
+#endif
                     {
-                        _row = row;
                         _action = reader.ReadUInt16();
-                        _hasDeclSecurityToken = reader.ReadUInt16();
+                        uint hasDeclSecurityToken = 0;
+                        if (HasDeclSecurityLargeIndices(typeDefTable, methodDefTable, assemblyTable)) { hasDeclSecurityToken = reader.ReadUInt32(); } else { hasDeclSecurityToken = reader.ReadUInt16(); }
+                        _parent = HasDeclSecurityDecode(hasDeclSecurityToken, typeDefTable, methodDefTable, assemblyTable);
                         uint blobIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _permissionSet = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
                     }
 #if NET6_0_OR_GREATER
-                    internal DeclSecurityTableRow(uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                    internal void Load(Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, MethodDefTable? methodDefTable, AssemblyTable? assemblyTable, Span<byte> data, ref uint offset)
                     {
-                        _row = row;
                         _action = BitConverterLE.ToUInt16(data, offset); offset += 2;
-                        _hasDeclSecurityToken = BitConverterLE.ToUInt16(data, offset); offset += 2;
-                        uint blobIndex = 0; if (blobHeap.LargeIndices) { BitConverterLE.ToUInt32(data, offset); offset += 4; } else { BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        uint hasDeclSecurityToken = 0;
+                        if (HasDeclSecurityLargeIndices(typeDefTable, methodDefTable, assemblyTable)) { hasDeclSecurityToken = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { hasDeclSecurityToken = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        _parent = HasDeclSecurityDecode(hasDeclSecurityToken, typeDefTable, methodDefTable, assemblyTable);
+                        uint blobIndex = 0; if (blobHeap.LargeIndices) { blobIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { blobIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _permissionSet = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
                     }
 #endif
-                    internal void Save(BinaryWriter binaryWriter)
+
+#if NET6_0_OR_GREATER
+                    internal void Save(TypeDefTable? typeDefTable, MethodDefTable? methodDefTable, AssemblyTable? assemblyTable, BinaryWriter binaryWriter)
+#else
+                    internal void Save(TypeDefTable typeDefTable, MethodDefTable methodDefTable, AssemblyTable assemblyTable, BinaryWriter binaryWriter)
+#endif
                     {
                         binaryWriter.Write(_action);
-                        binaryWriter.Write((ushort)_hasDeclSecurityToken);
+                        uint hasSecurityToken = HasDeclSecurityEncode(_parent);
+                        if (HasDeclSecurityLargeIndices(typeDefTable, methodDefTable, assemblyTable)) { binaryWriter.Write((uint)hasSecurityToken); } else { binaryWriter.Write((ushort)hasSecurityToken); }
                         binaryWriter.Write(_permissionSet.Index);
                     }
                 }
-                public DeclSecurityTableRow Add(ushort action, Heap.BlobHeap.Blob permissionSet)
+                public DeclSecurityTableRow Add(ushort action, IHasDeclSecurity parent, Heap.BlobHeap.Blob permissionSet)
                 {
                     lock (this)
                     {
-                        DeclSecurityTableRow row = new DeclSecurityTableRow((uint)(_rows.Count + 1), action, permissionSet);
+                        DeclSecurityTableRow row = new DeclSecurityTableRow((uint)(_rows.Count + 1), action, parent, permissionSet);
                         _rows.Add(row);
                         return row;
                     }
                 }
-                internal void Save(BinaryWriter binaryWriter)
+#if NET6_0_OR_GREATER
+                internal void Save(TypeDefTable? typeDefTable, MethodDefTable? methodDefTable, AssemblyTable? assemblyTable, BinaryWriter binaryWriter)
+#else
+                internal void Save(TypeDefTable typeDefTable, MethodDefTable methodDefTable, AssemblyTable assemblyTable, BinaryWriter binaryWriter)
+#endif
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows[n].Save(binaryWriter);
+                        _rows[n].Save(typeDefTable, methodDefTable, assemblyTable, binaryWriter);
                     }
                 }
-                internal DeclSecurityTable()
-                {
-                }
-                internal DeclSecurityTable(uint rows, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                internal DeclSecurityTable(uint rows)
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new DeclSecurityTableRow((uint)(n + 1), blobHeap, reader));
+                        _rows.Add(new DeclSecurityTableRow((uint)(n + 1)));
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal DeclSecurityTable(uint rows, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                internal void Load(Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, MethodDefTable? methodDefTable, AssemblyTable? assemblyTable, System.IO.BinaryReader reader)
+#else
+                internal void Load(Heap.BlobHeap blobHeap, TypeDefTable typeDefTable, MethodDefTable methodDefTable, AssemblyTable assemblyTable, System.IO.BinaryReader reader)
+#endif
                 {
-                    for (uint n = 0; n < rows; n++)
+                    for (uint n = 0; n < _rows.Count; n++)
                     {
-                        _rows.Add(new DeclSecurityTableRow((uint)(n + 1), blobHeap, data, ref offset));
+                        _rows[(int)n].Load(blobHeap, typeDefTable, methodDefTable, assemblyTable, reader);
+                    }
+                }
+#if NET6_0_OR_GREATER
+                internal void Load(Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, MethodDefTable? methodDefTable, AssemblyTable? assemblyTable, Span<byte> data, ref uint offset)
+                {
+                    for (uint n = 0; n < _rows.Count; n++)
+                    {
+                    _rows[(int)n].Load(blobHeap, typeDefTable, methodDefTable, assemblyTable, data, ref offset);
                     }
                 }
 #endif
