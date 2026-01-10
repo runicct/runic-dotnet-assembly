@@ -65,7 +65,7 @@ namespace Runic.Dotnet
 #endif
                     internal void Save(BinaryWriter binaryWriter)
                     {
-                        binaryWriter.Write(_signature.Index);
+                        if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((ushort)_signature.Index); }
                     }
                 }
                 public override int ID { get { return 0x11; } }

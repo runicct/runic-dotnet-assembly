@@ -32,6 +32,14 @@ namespace Runic.Dotnet
     {
         public static class MethodHeader
         {
+#if NET6_0_OR_GREATER
+            public static byte[] Encode(int bytecodeLength, int maxStackSize, MetadataTable.StandAloneSigTable.StandAloneSigTableRow? localSignature, bool moreSections, bool initLocals)
+#else
+            public static byte[] Encode(int bytecodeLength, int maxStackSize, MetadataTable.StandAloneSigTable.StandAloneSigTableRow localSignature, bool moreSections, bool initLocals)
+#endif
+            {
+                return Encode(bytecodeLength, maxStackSize, localSignature != null ? 0x11000000 | localSignature.Row : 0, moreSections, initLocals);
+            }
             public static byte[] Encode(int bytecodeLength, int maxStackSize, uint localSignatureToken, bool moreSections, bool initLocals)
             {
                 byte[] header;
@@ -65,6 +73,14 @@ namespace Runic.Dotnet
                 }
 
                 return header;
+            }
+#if NET6_0_OR_GREATER
+            public static void Save(int bytecodeLength, int maxStackSize, MetadataTable.StandAloneSigTable.StandAloneSigTableRow? localSignature, bool moreSections, bool initLocals, System.IO.BinaryWriter writer)
+#else
+            public static void Save(int bytecodeLength, int maxStackSize, MetadataTable.StandAloneSigTable.StandAloneSigTableRow localSignature, bool moreSections, bool initLocals, System.IO.BinaryWriter writer)
+#endif
+            {
+                Save(bytecodeLength, maxStackSize, localSignature != null ? 0x11000000 | localSignature.Row : 0, moreSections, initLocals, writer);
             }
             public static void Save(int bytecodeLength, int maxStackSize, uint localSignatureToken, bool moreSections, bool initLocals, System.IO.BinaryWriter writer)
             {
