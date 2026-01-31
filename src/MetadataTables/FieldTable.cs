@@ -74,6 +74,7 @@ namespace Runic.Dotnet
                         _attributes = fieldAttribute;
                         _name = name;
                         _signature = signature;
+                        _parent = parent;
                     }
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, BinaryReader reader)
                     {
@@ -96,8 +97,8 @@ namespace Runic.Dotnet
                     internal void Save(BinaryWriter writer)
                     {
                         writer.Write((ushort)_attributes);
-                        writer.Write((uint)_name.Index);
-                        writer.Write((uint)_signature.Index);
+                        if (_name.Heap.LargeIndices) { writer.Write((uint)_name.Index); } else { writer.Write((ushort)_name.Index); }
+                        if (_signature.Heap.LargeIndices) { writer.Write((uint)_signature.Index); } else { writer.Write((ushort)_signature.Index); }
                     }
                 }
                 internal void Save(BinaryWriter binaryWriter)

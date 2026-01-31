@@ -46,11 +46,11 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public FileTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public FileTableRow Add(FileAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob hashValue)
+                public FileTableRow Add(FileAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
                 {
                     lock (this)
                     {
-                        FileTableRow row = new FileTableRow(this, (uint)(_rows.Count + 1), attributes, name, hashValue);
+                        FileTableRow row = new FileTableRow(this, (uint)(_rows.Count + 1), attributes, name, signature);
                         _rows.Add(row);
                         return row;
                     }
@@ -62,19 +62,19 @@ namespace Runic.Dotnet
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     public override uint Length { get { return 3; } }
-                    Heap.BlobHeap.Blob _hashValue;
-                    public Heap.BlobHeap.Blob HashValue { get { return _hashValue; } }
+                    Heap.BlobHeap.Blob _signature;
+                    public Heap.BlobHeap.Blob Signature { get { return _signature; } set { _signature = value; } }
                     FileAttributes _attributes;
                     public FileAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal FileTableRow(FileTable parent, uint row, FileAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob hashValue)
+                    internal FileTableRow(FileTable parent, uint row, FileAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
                     {
                         _parent = parent;
                         _name = name;
                         _row = row;
                         _attributes = attributes;
-                        _hashValue = hashValue;
+                        _signature = signature;
                     }
                     internal FileTableRow(FileTable parent, uint row)
                     {
@@ -87,7 +87,7 @@ namespace Runic.Dotnet
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
                         uint hashIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _hashValue = new Heap.BlobHeap.Blob(blobHeap, hashIndex);
+                        _signature = new Heap.BlobHeap.Blob(blobHeap, hashIndex);
                     }
 #if NET6_0_OR_GREATER
 
@@ -97,14 +97,14 @@ namespace Runic.Dotnet
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
                         uint hashIndex = 0; if (blobHeap.LargeIndices) { hashIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { hashIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _hashValue = new Heap.BlobHeap.Blob(blobHeap, hashIndex);
+                        _signature = new Heap.BlobHeap.Blob(blobHeap, hashIndex);
                     }
 #endif
                     internal void Save(BinaryWriter binaryWriter)
                     {
                         binaryWriter.Write((ushort)_attributes);
                         if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((short)_name.Index); }
-                        if (_hashValue.Heap.LargeIndices) { binaryWriter.Write(_hashValue.Index); } else { binaryWriter.Write((short)_hashValue.Index); }
+                        if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((short)_signature.Index); }
                     }
                 }
                 internal void Save(BinaryWriter binaryWriter)
