@@ -44,11 +44,20 @@ namespace Runic.Dotnet
                     public IMemberRefParent Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
+#if NET6_0_OR_GREATER
+                    Heap.BlobHeap.Blob? _signature;
+                    public Heap.BlobHeap.Blob? Signature { get { return _signature; } set { _signature = value; } }
+#else
                     Heap.BlobHeap.Blob _signature;
-                    public Heap.BlobHeap.Blob Signature { get { return _signature; } }
+                    public Heap.BlobHeap.Blob Signature { get { return _signature; } set { _signature = value; } }
+#endif
                     uint _row;
                     public override uint Row { get { return _row; } }
+#if NET6_0_OR_GREATER
+                    internal MemberRefTableRow(uint row, IMemberRefParent parent, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
+#else
                     internal MemberRefTableRow(uint row, IMemberRefParent parent, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+#endif
                     {
                         _row = row;
                         _parent = parent;
@@ -113,7 +122,11 @@ namespace Runic.Dotnet
                 }
                 List<MemberRefTableRow> _rows = new List<MemberRefTableRow>();
                 public MemberRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
+#if NET6_0_OR_GREATER
+                public MemberRefTableRow Add(IMemberRefParent parent, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
+#else
                 public MemberRefTableRow Add(IMemberRefParent parent, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+#endif
                 {
                     lock (this)
                     {

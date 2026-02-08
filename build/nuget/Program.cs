@@ -49,7 +49,7 @@ static string CreateNuspec(string packageId, string version, string description,
     stringBuilder.AppendLine("</package>");
     return stringBuilder.ToString();
 }
-string version = "1.0.8";
+string version = "1.0.9";
 string currentExeDir = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(System.Environment.ProcessPath));
 string rootDir = System.IO.Path.GetFullPath(currentExeDir + "/../../../../..");
 string binDir = System.IO.Path.GetFullPath(rootDir + "/bin");

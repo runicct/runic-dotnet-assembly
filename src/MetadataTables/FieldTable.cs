@@ -58,8 +58,13 @@ namespace Runic.Dotnet
                     public FieldAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
+#if NET6_0_OR_GREATER
+                    Heap.BlobHeap.Blob? _signature;
+                    public Heap.BlobHeap.Blob? Signature { get { return _signature; } set { _signature = value; } }
+#else
                     Heap.BlobHeap.Blob _signature;
-                    public Heap.BlobHeap.Blob Signature { get { return _signature; } }
+                    public Heap.BlobHeap.Blob Signature { get { return _signature; } set { _signature = value; } }
+#endif
                     public override uint Length { get { return 3; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -68,7 +73,11 @@ namespace Runic.Dotnet
                         _row = row;
                         _parent = parent;
                     }
+#if NET6_0_OR_GREATER
+                    internal FieldTableRow(FieldTable parent, uint row, FieldAttributes fieldAttribute, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
+#else
                     internal FieldTableRow(FieldTable parent, uint row, FieldAttributes fieldAttribute, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+#endif
                     {
                         _row = row;
                         _attributes = fieldAttribute;
@@ -108,7 +117,11 @@ namespace Runic.Dotnet
                         _rows[n].Save(binaryWriter);
                     }
                 }
+#if NET6_0_OR_GREATER
+                public FieldTableRow Add(FieldAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
+#else
                 public FieldTableRow Add(FieldAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+#endif
                 {
                     lock (this)
                     {

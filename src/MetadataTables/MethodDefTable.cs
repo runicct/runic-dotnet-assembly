@@ -52,8 +52,13 @@ namespace Runic.Dotnet
                     public uint MethodBodyRelativeVirtualAddress { get { return _methodBodyRVA; } set { _methodBodyRVA = value; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
+#if NET6_0_OR_GREATER
+                    Heap.BlobHeap.Blob? _signature;
+                    public Heap.BlobHeap.Blob? Signature { get { return _signature; } set { _signature = value; } }
+#else
                     Heap.BlobHeap.Blob _signature;
-                    public Heap.BlobHeap.Blob Signature { get { return _signature; } }
+                    public Heap.BlobHeap.Blob Signature { get { return _signature; } set { _signature = value; } }
+#endif
                     MethodAttributes _attributes;
                     public MethodAttributes Attributes { get { return _attributes; } }
                     ParamTable.ParamTableRow _parameterList;
@@ -83,7 +88,11 @@ namespace Runic.Dotnet
 
                     uint _row;
                     public override uint Row { get { return _row; } }
+#if NET6_0_OR_GREATER
+                    internal MethodDefTableRow(MethodDefTable parent, uint row, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
+#else
                     internal MethodDefTableRow(MethodDefTable parent, uint row, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRVA, ParamTable.ParamTableRow paramList)
+#endif
                     {
                         _row = row;
                         _name = name;
@@ -225,7 +234,11 @@ namespace Runic.Dotnet
                         }
                     }
                 }
+#if NET6_0_OR_GREATER
+                public MethodDefTableRow Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRelativeVirtualAddress, ParamTable.ParamTableRow paramList)
+#else
                 public MethodDefTableRow Add(Heap.StringHeap.String name, Heap.BlobHeap.Blob signature, MethodAttributes attributes, MethodImplAttributes implAttributes, uint methodBodyRelativeVirtualAddress, ParamTable.ParamTableRow paramList)
+#endif
                 {
                     lock (this)
                     {

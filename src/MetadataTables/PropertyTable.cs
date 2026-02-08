@@ -46,7 +46,11 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public PropertyTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
+#if NET6_0_OR_GREATER
+                public PropertyTableRow Add(PropertyAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
+#else
                 public PropertyTableRow Add(PropertyAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+#endif
                 {
                     lock (this)
                     {
@@ -60,14 +64,23 @@ namespace Runic.Dotnet
                     PropertyTable _parent;
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
+#if NET6_0_OR_GREATER
+                    Heap.BlobHeap.Blob? _signature;
+                    public Heap.BlobHeap.Blob? Signature { get { return _signature; } set { _signature = value; } }
+#else
                     Heap.BlobHeap.Blob _signature;
-                    public Heap.BlobHeap.Blob Signature { get { return _signature; } }
+                    public Heap.BlobHeap.Blob Signature { get { return _signature; } set { _signature = value; } }
+#endif
                     public override uint Length { get { return 3; } }
                     PropertyAttributes _attributes;
                     public PropertyAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
+#if NET6_0_OR_GREATER
+                    internal PropertyTableRow(PropertyTable parent, uint row, PropertyAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
+#else
                     internal PropertyTableRow(PropertyTable parent, uint row, PropertyAttributes attributes, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+#endif
                     {
                         _parent = parent;
                         _name = name;
