@@ -237,6 +237,7 @@ namespace Runic.Dotnet
 #endif
             public static MetadataTable[] Load(BinaryReader reader, MetadataRoot.Stream strings, MetadataRoot.Stream blob, MetadataRoot.Stream GUID, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
             {
+                reader.ReadUInt32(); // Reserved
                 byte tableSchemataMajorVersion = reader.ReadByte();
                 byte tableSchemataMinorVersion = reader.ReadByte();
                 byte heapSize = reader.ReadByte();
@@ -644,7 +645,7 @@ namespace Runic.Dotnet
                             case 0x1C: implMapTable.Save(binaryWriter); break;
                             case 0x1D: fieldRVATable.Save(binaryWriter); break;
                             case 0x20: assemblyTable.Save(stringHeap, blobHeap, binaryWriter); break;
-                            case 0x23: assemblyRefTable.Save(binaryWriter); break;
+                            case 0x23: assemblyRefTable.Save(binaryWriter, blobHeap); break;
                             case 0x26: fileTable.Save(binaryWriter); break;
                             case 0x27: exportedTypeTable.Save(typeDefTable, fileTable, assemblyRefTable, binaryWriter); break;
                             case 0x28: manifestResourceTable.Save(fileTable, assemblyRefTable, exportedTypeTable, binaryWriter); break;

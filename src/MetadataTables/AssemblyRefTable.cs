@@ -24,10 +24,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 
 namespace Runic.Dotnet
 {
@@ -79,6 +79,7 @@ namespace Runic.Dotnet
                         _publicKey = new Heap.BlobHeap.Blob(blobHeap, publicKeyIndex);
                         _name = new Heap.StringHeap.String(stringHeap, nameKeyIndex);
                         _culture = new Heap.StringHeap.String(stringHeap, cultureKeyIndex);
+                        uint hashValueIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                     }
 #if NET6_0_OR_GREATER
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
@@ -95,9 +96,11 @@ namespace Runic.Dotnet
                         _publicKey = new Heap.BlobHeap.Blob(blobHeap, publicKeyIndex);
                         _name = new Heap.StringHeap.String(stringHeap, nameKeyIndex);
                         _culture = new Heap.StringHeap.String(stringHeap, cultureKeyIndex);
+                        uint hashValueIndex = 0; if (blobHeap.LargeIndices) { hashValueIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { hashValueIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+
                     }
 #endif
-                    internal void Save(BinaryWriter binaryWriter)
+                    internal void Save(BinaryWriter binaryWriter, Heap.BlobHeap blobHeap)
                     {
                         binaryWriter.Write((ushort)_version.Major);
                         binaryWriter.Write((ushort)_version.Minor);
@@ -107,7 +110,7 @@ namespace Runic.Dotnet
                         if (_publicKey.Heap.LargeIndices) { binaryWriter.Write(_publicKey.Index); } else { binaryWriter.Write((ushort)_publicKey.Index); }
                         if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
                         if (_culture.Heap.LargeIndices) { binaryWriter.Write(_culture.Index); } else { binaryWriter.Write((ushort)_culture.Index); }
-                        binaryWriter.Write(0);
+                        if (blobHeap.LargeIndices) { binaryWriter.Write(0); } else { binaryWriter.Write((ushort)0); }
                     }
                 }
                 public override int ID { get { return 0x23; } }
@@ -115,11 +118,11 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public AssemblyRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                internal void Save(BinaryWriter binaryWriter)
+                internal void Save(BinaryWriter binaryWriter, Heap.BlobHeap blobHeap)
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows[n].Save(binaryWriter);
+                        _rows[n].Save(binaryWriter, blobHeap);
                     }
                 }
                 public AssemblyRefTableRow Add(System.Version version, Heap.BlobHeap.Blob publicKey, Heap.StringHeap.String name,  Heap.StringHeap.String culture)

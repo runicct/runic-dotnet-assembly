@@ -127,20 +127,27 @@ namespace Runic.Dotnet
                         _fieldList = fieldList;
                         _methodList = methodList;
                     }
-#if NET6_0_OR_GREATER
-                    internal TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryReader reader)
-#else
-                    internal TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, BinaryReader reader)
-#endif
+                    internal TypeDefTableRow(TypeDefTable parent, uint row)
                     {
                         _row = row;
                         _parent = parent;
+                    }
+#if NET6_0_OR_GREATER
+                    internal void Load(Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryReader reader)
+#else
+                    internal void Load(Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, BinaryReader reader)
+#endif
+                    {
                         _attributes = (TypeAttributes)reader.ReadUInt32();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint namespaceIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint typeDefOrTypeRefTag = 0;
-                        if (TypeDefOrRefOrSpecLargeIndices(parent, typeRefTable, typeSpecTable)) { typeDefOrTypeRefTag = reader.ReadUInt32(); } else { typeDefOrTypeRefTag = reader.ReadUInt16(); }
-                        _parentType = TypeDefOrRefOrSpecDecode(typeDefOrTypeRefTag, parent, typeRefTable, typeSpecTable);
+                        if (TypeDefOrRefOrSpecLargeIndices(_parent, typeRefTable, typeSpecTable)) { typeDefOrTypeRefTag = reader.ReadUInt32(); } else { typeDefOrTypeRefTag = reader.ReadUInt16(); }
+                        if (typeDefOrTypeRefTag == 0) { _parentType = null; }
+                        else
+                        {
+                            _parentType = TypeDefOrRefOrSpecDecode(typeDefOrTypeRefTag, _parent, typeRefTable, typeSpecTable);
+                        }
                         uint fieldList = fieldTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _fieldList =  fieldTable[fieldList];
                         uint methodList = methodDef.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
@@ -149,16 +156,18 @@ namespace Runic.Dotnet
                         if (namespaceIndex == 0) { _namespace = null; } else { _namespace = new Heap.StringHeap.String(stringHeap, namespaceIndex); }
                     }
 #if NET6_0_OR_GREATER
-                    internal TypeDefTableRow(TypeDefTable parent, uint row, Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, Span<byte> data, ref uint offset)
+                    internal void Load(Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDef, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, Span<byte> data, ref uint offset)
                     {
-                        _row = row;
-                        _parent = parent;
                         _attributes = (TypeAttributes)BitConverterLE.ToUInt32(data, offset); offset += 4;
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint namespaceIndex = 0; if (stringHeap.LargeIndices) { namespaceIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { namespaceIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint typeDefOrTypeRefTag = 0;
-                        if (TypeDefOrRefOrSpecLargeIndices(parent, typeRefTable, typeSpecTable)) { typeDefOrTypeRefTag = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { typeDefOrTypeRefTag = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parentType = TypeDefOrRefOrSpecDecode(typeDefOrTypeRefTag, parent, typeRefTable, typeSpecTable);
+                        if (TypeDefOrRefOrSpecLargeIndices(_parent, typeRefTable, typeSpecTable)) { typeDefOrTypeRefTag = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { typeDefOrTypeRefTag = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        if (typeDefOrTypeRefTag == 0) { _parentType = null; }
+                        else
+                        {
+                            _parentType = TypeDefOrRefOrSpecDecode(typeDefOrTypeRefTag, _parent, typeRefTable, typeSpecTable);
+                        }
                         uint fieldList = 0; if (fieldTable.LargeIndices) { fieldList = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { fieldList = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         if (fieldList == 0 || (fieldList - 1) >= fieldTable.Rows) { _fieldList = null; } else { _fieldList = fieldTable[fieldList]; }
                         uint methodList = 0; if (methodDef.LargeIndices) { methodList = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { methodList = BitConverterLE.ToUInt16(data, offset); offset += 2; }
@@ -256,7 +265,11 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1), stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, reader));
+                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1)));
+                    }
+                    for (int n = 0; n < rows; n++)
+                    {
+                        _rows[n].Load(stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, reader);
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -264,11 +277,15 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1), stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, data, ref offset));
+                        _rows.Add(new TypeDefTableRow(this, (uint)(n + 1)));
+                    }
+                    for (int n = 0; n < rows; n++)
+                    {
+                        _rows[n].Load(stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, data, ref offset);
                     }
                 }
 #endif
-            }
         }
+    }
     }
 }
