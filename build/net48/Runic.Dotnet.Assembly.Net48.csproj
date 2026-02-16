@@ -227,6 +227,12 @@
     <Compile Include="..\..\src\TypeAttributes.cs">
       <Link>TypeAttributes.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\Signature.cs">
+      <Link>Signature.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\CallingConvention.cs">
+      <Link>CallingConvention.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
