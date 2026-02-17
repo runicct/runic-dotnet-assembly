@@ -151,7 +151,7 @@ namespace Runic.Dotnet
                         uint fieldList = fieldTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _fieldList =  fieldTable[fieldList];
                         uint methodList = methodDef.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _methodList = methodDef[fieldList];
+                        _methodList = methodDef[methodList];
                         if (nameIndex == 0) { _name = null; } else { _name = new Heap.StringHeap.String(stringHeap, nameIndex); }
                         if (namespaceIndex == 0) { _namespace = null; } else { _namespace = new Heap.StringHeap.String(stringHeap, namespaceIndex); }
                     }
