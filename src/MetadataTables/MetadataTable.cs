@@ -621,7 +621,7 @@ namespace Runic.Dotnet
                         {   
                             case 0x00: moduleTable.Save(GUIDHeap, binaryWriter); break;
                             case 0x01: typeRefTable.Save(moduleTable, moduleRefTable, assemblyRefTable, binaryWriter); break;
-                            case 0x02: typeDefTable.Save(fieldTable, methodDefTable, typeRefTable, typeSpecTable, binaryWriter); break;
+                            case 0x02: typeDefTable.Save(stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, binaryWriter); break;
                             case 0x04: fieldTable.Save(binaryWriter); break;
                             case 0x06: methodDefTable.Save(paramTable, binaryWriter); break;
                             case 0x08: paramTable.Save(binaryWriter); break;

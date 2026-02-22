@@ -178,14 +178,16 @@ namespace Runic.Dotnet
 #endif
 
 #if NET6_0_OR_GREATER
-                    internal void Save(FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
+                    internal void Save(Heap.StringHeap stringHeap, FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
 #else
-                    internal void Save(FieldTable fieldTable, MethodDefTable methodDefTable,  TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, BinaryWriter binaryWriter)
+                    internal void Save(Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable,  TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, BinaryWriter binaryWriter)
 #endif
                     {
                         binaryWriter.Write((uint)_attributes);
-                        if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
-                        if (_namespace.Heap.LargeIndices) { binaryWriter.Write(_namespace.Index); } else { binaryWriter.Write((ushort)_namespace.Index); }
+                        if (_name == null) { if (stringHeap.LargeIndices) { binaryWriter.Write((uint)0); } else { binaryWriter.Write((ushort)0); } }
+                        else if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
+                        if (_namespace == null) { if (stringHeap.LargeIndices) { binaryWriter.Write((uint)0); } else { binaryWriter.Write((ushort)0); } }
+                        else if (_namespace.Heap.LargeIndices) { binaryWriter.Write(_namespace.Index); } else { binaryWriter.Write((ushort)_namespace.Index); }
                         uint index = TypeDefOrRefOrSpecEncode(_parentType);
                         if (TypeDefOrRefOrSpecLargeIndices(_parent, typeRefTable, typeSpecTable)) { binaryWriter.Write(index); } else { binaryWriter.Write((ushort)index); }
                         if (_fieldList == null)
@@ -235,14 +237,14 @@ namespace Runic.Dotnet
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal void Save(FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
+                internal void Save(Heap.StringHeap stringHeap, FieldTable? fieldTable, MethodDefTable? methodDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, BinaryWriter binaryWriter)
 #else
-                internal void Save(FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable,  BinaryWriter binaryWriter)
+                internal void Save(Heap.StringHeap stringHeap, FieldTable fieldTable, MethodDefTable methodDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable,  BinaryWriter binaryWriter)
 #endif
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows[n].Save(fieldTable, methodDefTable, typeRefTable, typeSpecTable, binaryWriter);
+                        _rows[n].Save(stringHeap, fieldTable, methodDefTable, typeRefTable, typeSpecTable, binaryWriter);
                     }
                 }
                 public TypeDefTableRow Add(Heap.StringHeap.String name, Heap.StringHeap.String @namespace, TypeAttributes attributes, ITypeDefOrRefOrSpec parentType, FieldTable.FieldTableRow fieldList, MethodDefTable.MethodDefTableRow methodList)
