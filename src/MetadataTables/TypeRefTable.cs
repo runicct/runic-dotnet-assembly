@@ -47,6 +47,7 @@ namespace Runic.Dotnet
                     Heap.StringHeap.String _namespace;
                     public Heap.StringHeap.String Namespace { get { return _namespace; } }
                     IResolutionScope _resolutionScope;
+                    public IResolutionScope ResolutionScope { get { return _resolutionScope; } }
                     public override uint Length { get { return 3; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
