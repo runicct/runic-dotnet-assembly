@@ -48,7 +48,7 @@ namespace Runic.Dotnet
                     uint _row;
                     public override uint Row { get { return _row; } }
                     TypeSpecTable _parent;
-                    internal TypeSpecTable Parent { get { return _parent; } }
+                    public TypeSpecTable Parent { get { return _parent; } }
                     Heap.BlobHeap.Blob _signature;
                     public Heap.BlobHeap.Blob Signature { get { return _signature; } }
                     public override uint Length { get { return 1; } }

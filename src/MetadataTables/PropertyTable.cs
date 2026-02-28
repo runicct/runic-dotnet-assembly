@@ -62,6 +62,7 @@ namespace Runic.Dotnet
                 public class PropertyTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics, IHasConstant
                 {
                     PropertyTable _parent;
+                    public PropertyTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
 #if NET6_0_OR_GREATER

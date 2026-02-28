@@ -40,6 +40,8 @@ namespace Runic.Dotnet
                 List<AssemblyRefTableRow> _rows = new List<AssemblyRefTableRow>();
                 public class AssemblyRefTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute, IImplementation
                 {
+                    AssemblyRefTable _parent;
+                    public AssemblyRefTable Parent { get { return _parent; } }
                     System.Version _version;
                     public System.Version Version { get { return _version; } }
                     Heap.StringHeap.String _name;
@@ -51,16 +53,18 @@ namespace Runic.Dotnet
                     public override uint Length { get { return 9; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal AssemblyRefTableRow(uint row, System.Version version, Heap.BlobHeap.Blob publicKey, Heap.StringHeap.String name,  Heap.StringHeap.String culture)
+                    internal AssemblyRefTableRow(AssemblyRefTable parent, uint row, System.Version version, Heap.BlobHeap.Blob publicKey, Heap.StringHeap.String name,  Heap.StringHeap.String culture)
                     {
+                        _parent = parent;
                         _row = row;
                         _version = version;
                         _name = name;
                         _publicKey = publicKey;
                         _culture = culture;
                     }
-                    internal AssemblyRefTableRow(uint row)
+                    internal AssemblyRefTableRow(AssemblyRefTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
@@ -129,7 +133,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        AssemblyRefTableRow row = new AssemblyRefTableRow((uint)(_rows.Count + 1), version, publicKey, name, culture);
+                        AssemblyRefTableRow row = new AssemblyRefTableRow(this, (uint)(_rows.Count + 1), version, publicKey, name, culture);
                         _rows.Add(row);
                         return row;
                     }
@@ -141,7 +145,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new AssemblyRefTableRow(rows));
+                        _rows.Add(new AssemblyRefTableRow(this, rows));
                     }
                 }
                 internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)

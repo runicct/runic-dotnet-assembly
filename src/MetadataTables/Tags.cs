@@ -844,6 +844,59 @@ namespace Runic.Dotnet
             public interface IHasFieldMarshal
             {
             }
+
+#if NET6_0_OR_GREATER
+            internal static bool MemberForwardedLargeIndices(FieldTable? fieldTable, MethodDefTable? methodDefTable)
+#else
+            internal static bool MemberForwardedLargeIndices(FieldTable fieldTable, MethodDefTable methodDefTable)
+#endif
+            {
+                const uint maxRows = 0x7FFF;
+                if ((fieldTable != null) && (fieldTable.Rows >= maxRows)) { return true; }
+                if ((methodDefTable != null) && (methodDefTable.Rows >= maxRows)) { return true; }
+                return false;
+            }
+#if NET6_0_OR_GREATER
+            internal static IMemberForwarded? MemberForwardedDecode(uint tag, FieldTable? fieldTable, MethodDefTable? methodDefTable)
+#else
+            internal static IMemberForwarded  MemberForwardedDecode(uint tag, FieldTable fieldTable, MethodDefTable methodDefTable)
+#endif
+            {
+                uint index = tag >> 1;
+                uint type = tag & 0x1;
+                switch (type)
+                {
+                    case 0x0:
+                        {
+                            if (fieldTable == null) { return null; }
+                            return fieldTable[index];
+                        }
+                    case 0x1:
+                        {
+                            if (methodDefTable == null) { return null; }
+                            return methodDefTable[index];
+                        }
+                }
+                return null;
+            }
+#if NET6_0_OR_GREATER
+            internal static uint MemberForwardedEncode(IMemberForwarded? tag)
+#else
+            internal static uint MemberForwardedEncode(IMemberForwarded tag)
+#endif
+            {
+                switch (tag)
+                {
+                    case FieldTable.FieldTableRow field: return (uint)(field.Row << 1);
+                    case MethodDefTable.MethodDefTableRow methodDef: return (uint)(methodDef.Row << 1) | 0x01;
+                }
+                return 0;
+            }
+
+            public interface IMemberForwarded
+            {
+                
+            }
         }
     }
 }

@@ -36,6 +36,8 @@ namespace Runic.Dotnet
                 List<DocumentTableRow> _rows = new List<DocumentTableRow>();
                 public class DocumentTableRow : MetadataTableRow
                 {
+                    DocumentTable _parent;
+                    public DocumentTable Parent { get { return _parent; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
                     Heap.BlobHeap.Blob _name;
@@ -55,8 +57,9 @@ namespace Runic.Dotnet
                         _hashAlgorithm = hashAlgorithm;
                         _language = language;
                     }
-                    internal DocumentTableRow(uint row, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, System.IO.BinaryReader reader)
+                    internal DocumentTableRow(DocumentTable parent, uint row, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, System.IO.BinaryReader reader)
                     {
+                        _parent = parent;
                         _row = row;
                         _name = new Heap.BlobHeap.Blob(blobHeap, blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16());
                         _hashAlgorithm = new Heap.BlobHeap.GUIDHeap.GUID(GUIDHeap, GUIDHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16());
@@ -64,10 +67,10 @@ namespace Runic.Dotnet
                         _language = new Heap.BlobHeap.GUIDHeap.GUID(GUIDHeap, GUIDHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16());
                     }
 #if NET6_0_OR_GREATER
-                    internal DocumentTableRow(uint row, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, Span<byte> data, ref uint offset)
+                    internal DocumentTableRow(DocumentTable parent, uint row, Heap.BlobHeap blobHeap, Heap.GUIDHeap GUIDHeap, Span<byte> data, ref uint offset)
                     {
+                        _parent = parent;
                         _row = row;
-
                         uint nameIndex = 0; if (blobHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.BlobHeap.Blob(blobHeap, nameIndex);
                         uint hashAlgorithmIndex = 0; if (blobHeap.LargeIndices) { hashAlgorithmIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { hashAlgorithmIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
@@ -114,7 +117,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new DocumentTableRow((uint)(n + 1), blobHeap, GUIDHeap, reader));
+                        _rows.Add(new DocumentTableRow(this, (uint)(n + 1), blobHeap, GUIDHeap, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -123,7 +126,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new DocumentTableRow((uint)(n + 1), blobHeap, GUIDHeap, data, ref offset));
+                        _rows.Add(new DocumentTableRow(this, (uint)(n + 1), blobHeap, GUIDHeap, data, ref offset));
                     }
                 }
 #endif

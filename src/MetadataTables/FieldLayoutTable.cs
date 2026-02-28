@@ -50,14 +50,15 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        FieldLayoutTableRow row = new FieldLayoutTableRow((uint)(_rows.Count + 1), offset, field);
+                        FieldLayoutTableRow row = new FieldLayoutTableRow(this, (uint)(_rows.Count + 1), offset, field);
                         _rows.Add(row);
                         return row;
                     }
                 }
                 public class FieldLayoutTableRow : MetadataTableRow
                 {
-
+                    FieldLayoutTable _parent;
+                    public FieldLayoutTable Parent { get { return _parent; } }
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -65,14 +66,16 @@ namespace Runic.Dotnet
                     public uint Offset { get { return _offset; } }
                     FieldTable.FieldTableRow _field;
                     public FieldTable.FieldTableRow Field { get { return _field; } }
-                    internal FieldLayoutTableRow(uint row, uint offset, FieldTable.FieldTableRow field)
+                    internal FieldLayoutTableRow(FieldLayoutTable parent, uint row, uint offset, FieldTable.FieldTableRow field)
                     {
+                        _parent = parent;
                         _row = row;
                         _offset = offset;
                         _field = field;
                     }
-                    internal FieldLayoutTableRow(uint row)
+                    internal FieldLayoutTableRow(FieldLayoutTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
 #if NET6_0_OR_GREATER
@@ -155,7 +158,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new FieldLayoutTableRow((uint)(_rows.Count + 1)));
+                        _rows.Add(new FieldLayoutTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

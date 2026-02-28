@@ -58,7 +58,7 @@ namespace Runic.Dotnet
                 public class InterfaceImplTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     InterfaceImplTable _parent;
-                    internal InterfaceImplTable Parent { get { return _parent; } }
+                    public InterfaceImplTable Parent { get { return _parent; } }
                     public override uint Length { get { return 2; } }
                     TypeDefTable.TypeDefTableRow _class;
                     public TypeDefTable.TypeDefTableRow Class { get { return _class; } }

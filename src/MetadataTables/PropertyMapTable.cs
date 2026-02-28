@@ -50,34 +50,39 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        PropertyMapTableRow row = new PropertyMapTableRow(parent, propertyList);
+                        PropertyMapTableRow row = new PropertyMapTableRow(this, (uint)(_rows.Count + 1), parent, propertyList);
                         _rows.Add(row);
                         return row;
                     }
                 }
                 public class PropertyMapTableRow : MetadataTableRow
                 {
-                    TypeDefTable.TypeDefTableRow _parent;
-                    public TypeDefTable.TypeDefTableRow Parent { get { return _parent; } }
+                    PropertyMapTable _parent;
+                    public PropertyMapTable Parent { get { return _parent; } }
+                    TypeDefTable.TypeDefTableRow _declaringType;
+                    public TypeDefTable.TypeDefTableRow DeclaringType { get { return _declaringType; } }
                     PropertyTable.PropertyTableRow _propertyList;
                     public PropertyTable.PropertyTableRow PropertyList { get { return _propertyList; } internal set { _propertyList = value; } }
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal PropertyMapTableRow(TypeDefTable.TypeDefTableRow parent, PropertyTable.PropertyTableRow propertyList)
+                    internal PropertyMapTableRow(PropertyMapTable parent, uint row, TypeDefTable.TypeDefTableRow declaringType, PropertyTable.PropertyTableRow propertyList)
                     {
                         _parent = parent;
+                        _row = row;
+                        _declaringType = declaringType;
                         _propertyList = propertyList;
                     }
-                    internal PropertyMapTableRow(uint row)
+                    internal PropertyMapTableRow(PropertyMapTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
                     internal void Load(TypeDefTable typeDefTable, PropertyTable propertyTable, BinaryReader reader)
                     {
                         uint parentIndex = 0;
                         if (typeDefTable.LargeIndices) { parentIndex = reader.ReadUInt32(); } else { parentIndex = reader.ReadUInt16(); }
-                        _parent = typeDefTable[(uint)parentIndex];
+                        _declaringType = typeDefTable[(uint)parentIndex];
                         uint propertyListIndex = 0;
                         if (propertyTable.LargeIndices) { propertyListIndex = reader.ReadUInt32(); } else { propertyListIndex = reader.ReadUInt16(); }
                         _propertyList = propertyTable[(uint)propertyListIndex];
@@ -88,7 +93,7 @@ namespace Runic.Dotnet
                     {
                         uint parentIndex = 0;
                         if (typeDefTable.LargeIndices) { parentIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parent = typeDefTable[(uint)parentIndex];
+                        _declaringType = typeDefTable[(uint)parentIndex];
                         uint propertyListIndex = 0;
                         if (propertyTable.LargeIndices) { propertyListIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { propertyListIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _propertyList = propertyTable[(uint)propertyListIndex];
@@ -96,7 +101,7 @@ namespace Runic.Dotnet
 #endif
                     internal void Save(TypeDefTable typeDefTable, PropertyTable propertyTable, BinaryWriter binaryWriter)
                     {
-                        if (typeDefTable.LargeIndices) { binaryWriter.Write((uint)_parent.Row); } else { binaryWriter.Write((ushort)_parent.Row); }
+                        if (typeDefTable.LargeIndices) { binaryWriter.Write((uint)_declaringType.Row); } else { binaryWriter.Write((ushort)_declaringType.Row); }
                         if (propertyTable.LargeIndices) { binaryWriter.Write((uint)_propertyList.Row); } else { binaryWriter.Write((ushort)_propertyList.Row); }
                     }
                 }
@@ -126,7 +131,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new PropertyMapTableRow((uint)(_rows.Count + 1)));
+                        _rows.Add(new PropertyMapTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

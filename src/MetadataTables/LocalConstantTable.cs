@@ -44,7 +44,7 @@ namespace Runic.Dotnet
                     public Heap.BlobHeap.Blob Signature { get { return _signature; } }
                     public override uint Length { get { return 0x02; } }
                     LocalConstantTable _parent;
-                    internal LocalConstantTable Parent { get { return _parent; } }
+                    public LocalConstantTable Parent { get { return _parent; } }
                     internal LocalConstantTableRow(LocalConstantTable parent, uint row, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
                     {
                         _row = row;

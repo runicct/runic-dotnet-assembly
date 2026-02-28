@@ -45,18 +45,22 @@ namespace Runic.Dotnet
                 public ModuleRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public class ModuleRefTableRow : MetadataTableRow, IResolutionScope, IMemberRefParent, IHasCustomAttribute
                 {
+                    ModuleRefTable _parent;
+                    public ModuleRefTable Parent { get { return _parent; } }
                     public override uint Length { get { return 1; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal ModuleRefTableRow(uint row, Heap.StringHeap.String name)
+                    internal ModuleRefTableRow(ModuleRefTable parent, uint row, Heap.StringHeap.String name)
                     {
+                        _parent = parent;
                         _row = row;
                         _name = name;
                     }
-                    internal ModuleRefTableRow(uint row)
+                    internal ModuleRefTableRow(ModuleRefTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
                     internal void Load(Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
@@ -80,7 +84,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        ModuleRefTableRow row = new ModuleRefTableRow((uint)(_rows.Count + 1), name);
+                        ModuleRefTableRow row = new ModuleRefTableRow(this, (uint)(_rows.Count + 1), name);
                         _rows.Add(row);
                         return row;
                     }
@@ -99,7 +103,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new ModuleRefTableRow((uint)(n + 1)));
+                        _rows.Add(new ModuleRefTableRow(this, (uint)(n + 1)));
                     }
                 }
                 internal void Load(Heap.StringHeap stringHeap, System.IO.BinaryReader reader)

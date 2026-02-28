@@ -58,7 +58,7 @@ namespace Runic.Dotnet
                 public class MethodSpecTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     MethodSpecTable _parent;
-                    internal MethodSpecTable Parent { get { return _parent; } }
+                    public MethodSpecTable Parent { get { return _parent; } }
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }

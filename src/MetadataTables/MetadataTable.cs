@@ -211,7 +211,7 @@ namespace Runic.Dotnet
                             case 0x19: methodImplTable.Load(typeDefTable, methodDefTable, memberRefTable, data, ref offset); tables[table] = methodImplTable; break;
                             case 0x1A: moduleRefTable.Load(stringHeap, data, ref offset); tables[table] = moduleRefTable; break;
                             case 0x1B: typeSpecTable.Load(blobHeap, data, ref offset); tables[table] = typeSpecTable; break;
-                            case 0x1C: ImplMapTable implMapTable = new ImplMapTable(rows[n], stringHeap, data, ref offset); tables[table] = implMapTable; break;
+                            case 0x1C: ImplMapTable implMapTable = new ImplMapTable(rows[n], moduleRefTable, fieldTable, methodDefTable, stringHeap, data, ref offset); tables[table] = implMapTable; break;
                             case 0x1D: FieldRVATable fieldRVATable = new FieldRVATable(rows[n], fieldTable, data, ref offset); tables[table] = fieldRVATable; break;
                             case 0x20: assemblyTable.Load(stringHeap, blobHeap, data, ref offset); tables[table] = assemblyTable; break;
                             case 0x23: assemblyRefTable.Load(stringHeap, blobHeap, data, ref offset); tables[table] = assemblyRefTable; break;
@@ -392,7 +392,7 @@ namespace Runic.Dotnet
                             case 0x19: methodImplTable.Load(typeDefTable, methodDefTable, memberRefTable, reader); tables[table] = methodImplTable; break;
                             case 0x1A: moduleRefTable.Load(stringHeap, reader); tables[table] = moduleRefTable; break;
                             case 0x1B: typeSpecTable.Load(blobHeap, reader); tables[table] = typeSpecTable; break;
-                            case 0x1C: ImplMapTable implMapTable = new ImplMapTable(rows[n], stringHeap, reader); tables[table] = implMapTable; break;
+                            case 0x1C: ImplMapTable implMapTable = new ImplMapTable(rows[n], moduleRefTable, fieldTable, methodDefTable, stringHeap, reader); tables[table] = implMapTable; break;
                             case 0x1D: FieldRVATable fieldRVATable = new FieldRVATable(rows[n], fieldTable, reader); tables[table] = fieldRVATable; break;
                             case 0x20: assemblyTable.Load(stringHeap, blobHeap, reader); tables[table] = assemblyTable; break;
                             case 0x23: assemblyRefTable.Load(stringHeap, blobHeap, reader); tables[table] = assemblyRefTable; break;
@@ -642,7 +642,7 @@ namespace Runic.Dotnet
                             case 0x19: methodImplTable.Save(methodDefTable, memberRefTable, binaryWriter); break;
                             case 0x1A: moduleRefTable.Save(binaryWriter); break;
                             case 0x1B: typeSpecTable.Save(binaryWriter); break;
-                            case 0x1C: implMapTable.Save(binaryWriter); break;
+                            case 0x1C: implMapTable.Save(fieldTable, methodDefTable, binaryWriter); break;
                             case 0x1D: fieldRVATable.Save(binaryWriter); break;
                             case 0x20: assemblyTable.Save(stringHeap, blobHeap, binaryWriter); break;
                             case 0x23: assemblyRefTable.Save(binaryWriter, blobHeap); break;

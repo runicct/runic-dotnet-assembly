@@ -41,10 +41,10 @@ namespace Runic.Dotnet
                 public override bool Sorted { get { return false; } }
                 public MethodDefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
 
-                public class MethodDefTableRow : MetadataTableRow, IMemberRefParent, ICustomAttributeConstructor, IHasCustomAttribute, ITypeDefOrMethodDef, IMethodDefOrRef, IHasDeclSecurity
+                public class MethodDefTableRow : MetadataTableRow, IMemberRefParent, ICustomAttributeConstructor, IHasCustomAttribute, ITypeDefOrMethodDef, IMethodDefOrRef, IHasDeclSecurity, IMemberForwarded
                 {
                     MethodDefTable _parent;
-                    internal MethodDefTable Parent { get { return _parent; } }
+                    public MethodDefTable Parent { get { return _parent; } }
                     MethodImplAttributes _implAttributes;
                     public MethodImplAttributes ImplAttributes { get { return _implAttributes; } }
                     public override uint Length { get { return 6; } }

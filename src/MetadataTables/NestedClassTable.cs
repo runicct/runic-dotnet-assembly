@@ -45,6 +45,8 @@ namespace Runic.Dotnet
                 public NestedClassTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public class NestedClassTableRow : MetadataTableRow
                 {
+                    NestedClassTable _parent;
+                    public NestedClassTable Parent { get { return _parent; } }
                     public override uint Length { get { return 1; } }
                     TypeDefTable.TypeDefTableRow _nestedClass;
                     public TypeDefTable.TypeDefTableRow NestedClass { get { return _nestedClass; } }
@@ -52,14 +54,16 @@ namespace Runic.Dotnet
                     public TypeDefTable.TypeDefTableRow EnclosingClass { get { return _enclosingClass; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal NestedClassTableRow(uint row, TypeDefTable.TypeDefTableRow nestedClass, TypeDefTable.TypeDefTableRow enclosingClass)
+                    internal NestedClassTableRow(NestedClassTable parent, uint row, TypeDefTable.TypeDefTableRow nestedClass, TypeDefTable.TypeDefTableRow enclosingClass)
                     {
+                        _parent = parent;
                         _row = row;
                         _nestedClass = nestedClass;
                         _enclosingClass = enclosingClass;
                     }
-                    internal NestedClassTableRow(uint row, TypeDefTable typeDefTable, System.IO.BinaryReader reader)
+                    internal NestedClassTableRow(NestedClassTable parent, uint row, TypeDefTable typeDefTable, System.IO.BinaryReader reader)
                     {
+                        _parent = parent;
                         _row = row;
                         uint nestedClassIndex = 0; if (typeDefTable.LargeIndices) { nestedClassIndex = reader.ReadUInt32(); } else { nestedClassIndex = reader.ReadUInt16(); }
                         uint enclosingClassIndex = 0; if (typeDefTable.LargeIndices) { enclosingClassIndex = reader.ReadUInt32(); } else { enclosingClassIndex = reader.ReadUInt16(); }
@@ -67,8 +71,9 @@ namespace Runic.Dotnet
                         _enclosingClass = typeDefTable[enclosingClassIndex];
                     }
 #if NET6_0_OR_GREATER
-                    internal NestedClassTableRow(uint row, TypeDefTable typeDefTable, Span<byte> data, ref uint offset)
+                    internal NestedClassTableRow(NestedClassTable parent, uint row, TypeDefTable typeDefTable, Span<byte> data, ref uint offset)
                     {
+                        _parent = parent;
                         _row = row;
                         uint nestedClassIndex = 0; if (typeDefTable.LargeIndices) { nestedClassIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nestedClassIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint enclosingClassIndex = 0; if (typeDefTable.LargeIndices) { enclosingClassIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { enclosingClassIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
@@ -86,7 +91,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        NestedClassTableRow row = new NestedClassTableRow((uint)(_rows.Count + 1), nestedClass, enclosingClass);
+                        NestedClassTableRow row = new NestedClassTableRow(this, (uint)(_rows.Count + 1), nestedClass, enclosingClass);
                         _rows.Add(row);
                         return row;
                     }
@@ -105,7 +110,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new NestedClassTableRow((uint)(n + 1), typeDefTable, reader));
+                        _rows.Add(new NestedClassTableRow(this, (uint)(n + 1), typeDefTable, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -113,7 +118,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new NestedClassTableRow((uint)(n + 1), typeDefTable, data, ref offset));
+                        _rows.Add(new NestedClassTableRow(this, (uint)(n + 1), typeDefTable, data, ref offset));
                     }
                 }
 #endif

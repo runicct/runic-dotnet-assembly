@@ -40,8 +40,10 @@ namespace Runic.Dotnet
                 public class MemberRefTableRow : MetadataTableRow, ICustomAttributeConstructor, IHasCustomAttribute, IMethodDefOrRef
                 {
                     public override uint Length { get { return 3; } }
-                    IMemberRefParent _parent;
-                    public IMemberRefParent Parent { get { return _parent; } }
+                    MemberRefTable _parent;
+                    public MemberRefTable Parent { get { return _parent; } }
+                    IMemberRefParent _memberParent;
+                    public IMemberRefParent MemberParent { get { return _memberParent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
 #if NET6_0_OR_GREATER
@@ -54,38 +56,41 @@ namespace Runic.Dotnet
                     uint _row;
                     public override uint Row { get { return _row; } }
 #if NET6_0_OR_GREATER
-                    internal MemberRefTableRow(uint row, IMemberRefParent parent, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
+                    internal MemberRefTableRow(MemberRefTable parent, uint row, IMemberRefParent memberParent, Heap.StringHeap.String name, Heap.BlobHeap.Blob? signature)
 #else
-                    internal MemberRefTableRow(uint row, IMemberRefParent parent, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
+                    internal MemberRefTableRow(MemberRefTable parent, uint row, IMemberRefParent memberParent, Heap.StringHeap.String name, Heap.BlobHeap.Blob signature)
 #endif
                     {
-                        _row = row;
                         _parent = parent;
+                        _row = row;
+                        _memberParent = memberParent;
                         _signature = signature;
                         _name = name;
                     }
 #if NET6_0_OR_GREATER
-                    internal MemberRefTableRow(uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, ModuleRefTable? moduleRefTable, MethodDefTable? methodDefTable, System.IO.BinaryReader reader)
+                    internal MemberRefTableRow(MemberRefTable parent, uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, ModuleRefTable? moduleRefTable, MethodDefTable? methodDefTable, System.IO.BinaryReader reader)
 #else
-                    internal MemberRefTableRow(uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, TypeDefTable typeDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, ModuleRefTable moduleRefTable, MethodDefTable methodDefTable, System.IO.BinaryReader reader)
+                    internal MemberRefTableRow(MemberRefTable parent, uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, TypeDefTable typeDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, ModuleRefTable moduleRefTable, MethodDefTable methodDefTable, System.IO.BinaryReader reader)
 #endif
                     {
+                        _parent = parent;
                         _row = row;
                         uint parentTag = 0;
                         if (MemberRefParentLargeIndices(typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable)) { parentTag = reader.ReadUInt32(); } else { parentTag = reader.ReadUInt16(); }
-                        _parent = MemberRefParentDecode(parentTag, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable);
+                        _memberParent = MemberRefParentDecode(parentTag, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable);
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint signatureIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
                         _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
                     }
 #if NET6_0_OR_GREATER
-                    internal MemberRefTableRow(uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, ModuleRefTable? moduleRefTable, MethodDefTable? methodDefTable, Span<byte> data, ref uint offset)
+                    internal MemberRefTableRow(MemberRefTable parent,  uint row, Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, TypeDefTable? typeDefTable, TypeRefTable? typeRefTable, TypeSpecTable? typeSpecTable, ModuleRefTable? moduleRefTable, MethodDefTable? methodDefTable, Span<byte> data, ref uint offset)
                     {
+                        _parent = parent;
                         _row = row;
-                        uint parentTag = MemberRefParentEncode(_parent);
+                        uint parentTag = MemberRefParentEncode(_memberParent);
                         if (MemberRefParentLargeIndices(typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable)) { parentTag = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentTag = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parent = MemberRefParentDecode(parentTag, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable);
+                        _memberParent = MemberRefParentDecode(parentTag, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable);
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint signatureIndex = 0; if (blobHeap.LargeIndices) { signatureIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { signatureIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
@@ -99,7 +104,7 @@ namespace Runic.Dotnet
                     internal void Save(TypeDefTable typeDefTable, TypeRefTable typeRefTable, TypeSpecTable typeSpecTable, ModuleRefTable moduleRefTable, MethodDefTable methodDefTable, BinaryWriter binaryWriter)
 #endif
                     {
-                        uint parentTag = MemberRefParentEncode(_parent);
+                        uint parentTag = MemberRefParentEncode(_memberParent);
                         if (MemberRefParentLargeIndices(typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable)) { binaryWriter.Write(parentTag); } else { binaryWriter.Write((ushort)parentTag); }
                         if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
                         if (_signature.Heap.LargeIndices) { binaryWriter.Write(_signature.Index); } else { binaryWriter.Write((ushort)_signature.Index); }
@@ -130,7 +135,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        MemberRefTableRow row = new MemberRefTableRow((uint)(_rows.Count + 1), parent, name, signature);
+                        MemberRefTableRow row = new MemberRefTableRow(this, (uint)(_rows.Count + 1), parent, name, signature);
                         _rows.Add(row);
                         return row;
                     }
@@ -146,7 +151,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new MemberRefTableRow(n + 1, stringHeap, blobHeap, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable, reader));
+                        _rows.Add(new MemberRefTableRow(this, n + 1, stringHeap, blobHeap, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -154,7 +159,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new MemberRefTableRow(n + 1, stringHeap, blobHeap, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable, data, ref offset));
+                        _rows.Add(new MemberRefTableRow(this, n + 1, stringHeap, blobHeap, typeDefTable, typeRefTable, typeSpecTable, moduleRefTable, methodDefTable, data, ref offset));
                     }
                 }
 #endif

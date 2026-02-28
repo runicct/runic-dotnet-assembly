@@ -46,34 +46,36 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public FieldMarshalTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public FieldMarshalTableRow Add(IHasFieldMarshal parent, Heap.BlobHeap.Blob nativeType)
+                public FieldMarshalTableRow Add(IHasFieldMarshal target, Heap.BlobHeap.Blob nativeType)
                 {
                     lock (this)
                     {
-                        FieldMarshalTableRow row = new FieldMarshalTableRow((uint)(_rows.Count + 1), parent, nativeType);
+                        FieldMarshalTableRow row = new FieldMarshalTableRow(this, (uint)(_rows.Count + 1), target, nativeType);
                         _rows.Add(row);
                         return row;
                     }
                 }
                 public class FieldMarshalTableRow : MetadataTableRow
                 {
-
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    IHasFieldMarshal _parent;
-                    public IHasFieldMarshal Parent { get { return _parent; } }
+                    FieldMarshalTable _parent;
+                    public FieldMarshalTable Parent { get { return _parent; } }
+                    IHasFieldMarshal _target;
+                    public IHasFieldMarshal Target { get { return _target; } }
                     Heap.BlobHeap.Blob _nativeType;
                     public Heap.BlobHeap.Blob NativeType { get { return _nativeType; } }
-                    internal FieldMarshalTableRow(uint row, IHasFieldMarshal parent, Heap.BlobHeap.Blob nativeType)
+                    internal FieldMarshalTableRow(FieldMarshalTable parent, uint row, IHasFieldMarshal target, Heap.BlobHeap.Blob nativeType)
                     {
                         _parent = parent;
                         _row = row;
-                        _parent = parent;
+                        _target = target;
                         _nativeType = nativeType;
                     }
-                    internal FieldMarshalTableRow(uint row)
+                    internal FieldMarshalTableRow(FieldMarshalTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
 #if NET6_0_OR_GREATER
@@ -84,7 +86,7 @@ namespace Runic.Dotnet
                     {
                         uint parentIndex;
                         if (HasFieldMarshalLargeIndices(fieldTable, paramTable)) { parentIndex = reader.ReadUInt32(); } else { parentIndex = reader.ReadUInt16(); }
-                        _parent = HasFieldMarshalDecode(parentIndex, fieldTable, paramTable);
+                        _target = HasFieldMarshalDecode(parentIndex, fieldTable, paramTable);
                         uint valueIndex;
                         if (blobHeap.LargeIndices) { valueIndex = reader.ReadUInt32(); } else { valueIndex = reader.ReadUInt16(); }
                         _nativeType = new Heap.BlobHeap.Blob(blobHeap, valueIndex);
@@ -95,7 +97,7 @@ namespace Runic.Dotnet
                     {
                         uint parentIndex;
                         if (HasFieldMarshalLargeIndices(fieldTable, paramTable)) { parentIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parent = HasFieldMarshalDecode(parentIndex, fieldTable, paramTable);
+                        _target = HasFieldMarshalDecode(parentIndex, fieldTable, paramTable);
                         uint valueIndex;
                         if (blobHeap.LargeIndices) { valueIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { valueIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _nativeType = new Heap.BlobHeap.Blob(blobHeap, valueIndex);
@@ -108,7 +110,7 @@ namespace Runic.Dotnet
                     internal void Save(FieldTable fieldTable, ParamTable paramTable, BinaryWriter binaryWriter)
 #endif
                     {
-                        uint parentIndex = HasFieldMarshalEncode(_parent);
+                        uint parentIndex = HasFieldMarshalEncode(_target);
                         if (HasFieldMarshalLargeIndices(fieldTable, paramTable)) { binaryWriter.Write(parentIndex); } else { binaryWriter.Write((ushort)parentIndex); }
                         if (_nativeType.Heap.LargeIndices) { binaryWriter.Write(_nativeType.Index); } else { binaryWriter.Write((ushort)_nativeType.Index); }
                     }
@@ -147,7 +149,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new FieldMarshalTableRow((uint)(_rows.Count + 1)));
+                        _rows.Add(new FieldMarshalTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

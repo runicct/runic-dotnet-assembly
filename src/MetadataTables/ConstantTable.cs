@@ -46,37 +46,39 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public ConstantTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public ConstantTableRow Add(byte type, IHasConstant parent, Heap.BlobHeap.Blob value)
+                public ConstantTableRow Add(byte type, IHasConstant target, Heap.BlobHeap.Blob value)
                 {
                     lock (this)
                     {
-                        ConstantTableRow row = new ConstantTableRow((uint)(_rows.Count + 1), type, parent, value);
+                        ConstantTableRow row = new ConstantTableRow(this, (uint)(_rows.Count + 1), type, target, value);
                         _rows.Add(row);
                         return row;
                     }
                 }
                 public class ConstantTableRow : MetadataTableRow
                 {
-
+                    ConstantTable _parent;
+                    public ConstantTable Parent { get { return _parent; } }
                     public override uint Length { get { return 3; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
                     byte _type;
                     public byte Type { get { return _type; } }
-                    IHasConstant _parent;
-                    public IHasConstant Parent { get { return _parent; } }
+                    IHasConstant _target;
+                    public IHasConstant Target { get { return _target; } }
                     Heap.BlobHeap.Blob _value;
                     public Heap.BlobHeap.Blob Value { get { return _value; } }
-                    internal ConstantTableRow(uint row, byte type, IHasConstant parent, Heap.BlobHeap.Blob value)
+                    internal ConstantTableRow(ConstantTable parent, uint row, byte type, IHasConstant target, Heap.BlobHeap.Blob value)
                     {
-                        _parent = parent;
+                        _target = target;
                         _row = row;
                         _type = type;
                         _parent = parent;
                         _value = value;
                     }
-                    internal ConstantTableRow(uint row)
+                    internal ConstantTableRow(ConstantTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
 #if NET6_0_OR_GREATER
@@ -88,7 +90,7 @@ namespace Runic.Dotnet
                         _type = reader.ReadByte(); reader.ReadByte();
                         uint parentIndex;
                         if (HasConstantLargeIndices(fieldTable, paramTable, propertyTable)) { parentIndex = reader.ReadUInt32(); } else { parentIndex = reader.ReadUInt16(); }
-                        _parent = HasConstantDecode(parentIndex, fieldTable, paramTable, propertyTable);
+                        _target = HasConstantDecode(parentIndex, fieldTable, paramTable, propertyTable);
                         uint valueIndex;
                         if (blobHeap.LargeIndices) { valueIndex = reader.ReadUInt32(); } else { valueIndex = reader.ReadUInt16(); }
                         _value = new Heap.BlobHeap.Blob(blobHeap, valueIndex);
@@ -100,7 +102,7 @@ namespace Runic.Dotnet
                         _type = data[(int)offset]; offset += 2;
                         uint parentIndex;
                         if (HasConstantLargeIndices(fieldTable, paramTable, propertyTable)) { parentIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parent = HasConstantDecode(parentIndex, fieldTable, paramTable, propertyTable);
+                        _target = HasConstantDecode(parentIndex, fieldTable, paramTable, propertyTable);
                         uint valueIndex;
                         if (blobHeap.LargeIndices) { valueIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { valueIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _value = new Heap.BlobHeap.Blob(blobHeap, valueIndex);
@@ -115,7 +117,7 @@ namespace Runic.Dotnet
                     {
                         binaryWriter.Write((byte)_type);
                         binaryWriter.Write((byte)0);
-                        uint parentIndex = HasConstantEncode(_parent);
+                        uint parentIndex = HasConstantEncode(_target);
                         if (HasConstantLargeIndices(fieldTable, paramTable, propertyTable)) { binaryWriter.Write(parentIndex); } else { binaryWriter.Write((ushort)parentIndex); }
                         if (_value.Heap.LargeIndices) { binaryWriter.Write(_value.Index); } else { binaryWriter.Write((ushort)_value.Index); }
                     }
@@ -154,7 +156,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new ConstantTableRow((uint)(_rows.Count + 1)));
+                        _rows.Add(new ConstantTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

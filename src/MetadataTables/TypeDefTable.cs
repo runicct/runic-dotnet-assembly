@@ -48,7 +48,7 @@ namespace Runic.Dotnet
                     uint _row;
                     public override uint Row { get { return _row; } }
                     TypeDefTable _parent;
-                    internal TypeDefTable Parent { get { return _parent; } }
+                    public TypeDefTable Parent { get { return _parent; } }
                     TypeAttributes _attributes;
                     public TypeAttributes Attributes { get { return _attributes; } internal set { _attributes = value; } }
 #if NET6_0_OR_GREATER

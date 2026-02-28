@@ -59,7 +59,7 @@ namespace Runic.Dotnet
                 public class ParamTableRow : MetadataTableRow, IHasCustomAttribute, IHasConstant, IHasFieldMarshal
                 {
                     ParamTable _parent;
-                    internal ParamTable Parent { get { return _parent; } }
+                    public ParamTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     public override uint Length { get { return 3; } }

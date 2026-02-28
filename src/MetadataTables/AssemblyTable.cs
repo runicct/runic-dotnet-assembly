@@ -36,6 +36,8 @@ namespace Runic.Dotnet
                 List<AssemblyTableRow> _rows = new List<AssemblyTableRow>();
                 public class AssemblyTableRow : MetadataTableRow, IHasCustomAttribute, IHasDeclSecurity
                 {
+                    AssemblyTable _parent;
+                    public AssemblyTable Parent { get { return _parent; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
                     System.Version _version;
@@ -57,19 +59,21 @@ namespace Runic.Dotnet
 #endif
                     public override uint Length { get { return 0x06; } }
 #if NET6_0_OR_GREATER
-                    internal AssemblyTableRow(uint row, System.Version version, Heap.BlobHeap.Blob? publickey, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
+                    internal AssemblyTableRow(AssemblyTable parent, uint row, System.Version version, Heap.BlobHeap.Blob? publickey, Heap.StringHeap.String name, Heap.StringHeap.String? culture)
 #else
-                    internal AssemblyTableRow(uint row, System.Version version, Heap.BlobHeap.Blob publickey, Heap.StringHeap.String name, Heap.StringHeap.String culture)
+                    internal AssemblyTableRow(AssemblyTable parent, uint row, System.Version version, Heap.BlobHeap.Blob publickey, Heap.StringHeap.String name, Heap.StringHeap.String culture)
 #endif
                     {
+                        _parent = parent;
                         _row = row;
                         _version = version;
                         _name = name;
                         _culture = culture;
                         _publicKey = publickey;
                     }
-                    internal AssemblyTableRow(uint row)
+                    internal AssemblyTableRow(AssemblyTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
                     internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
@@ -142,7 +146,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        AssemblyTableRow row = new AssemblyTableRow((uint)(_rows.Count + 1), version, publicKey, name, culture);
+                        AssemblyTableRow row = new AssemblyTableRow(this, (uint)(_rows.Count + 1), version, publicKey, name, culture);
                         _rows.Add(row);
                         return row;
                     }
@@ -154,7 +158,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new AssemblyTableRow((uint)(n + 1)));
+                        _rows.Add(new AssemblyTableRow(this, (uint)(n + 1)));
                     }
                 }
                 internal void Load(Heap.StringHeap stringHeap, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)

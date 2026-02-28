@@ -50,14 +50,15 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        MethodImplTableRow row = new MethodImplTableRow((uint)(_rows.Count + 1), @class, methodBody, methodDeclaration);
+                        MethodImplTableRow row = new MethodImplTableRow(this, (uint)(_rows.Count + 1), @class, methodBody, methodDeclaration);
                         _rows.Add(row);
                         return row;
                     }
                 }
                 public class MethodImplTableRow : MetadataTableRow
                 {
-
+                    MethodImplTable _parent;
+                    public MethodImplTable Parent { get { return _parent; } }
                     public override uint Length { get { return 3; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -67,15 +68,17 @@ namespace Runic.Dotnet
                     public IMethodDefOrRef MethodBody { get { return _methodBody; } }
                     IMethodDefOrRef _methodDeclaration;
                     public IMethodDefOrRef MethodDeclaration { get { return _methodDeclaration; } }
-                    internal MethodImplTableRow(uint row, TypeDefTable.TypeDefTableRow @class, IMethodDefOrRef methodBody, IMethodDefOrRef methodDeclaration)
+                    internal MethodImplTableRow(MethodImplTable parent, uint row, TypeDefTable.TypeDefTableRow @class, IMethodDefOrRef methodBody, IMethodDefOrRef methodDeclaration)
                     {
+                        _parent = parent;
                         _row = row;
                         _class = @class;
                         _methodBody = methodBody;
                         _methodDeclaration = methodDeclaration;
                     }
-                    internal MethodImplTableRow(uint row)
+                    internal MethodImplTableRow(MethodImplTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
 #if NET6_0_OR_GREATER
@@ -179,7 +182,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new MethodImplTableRow((uint)(_rows.Count + 1)));
+                        _rows.Add(new MethodImplTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

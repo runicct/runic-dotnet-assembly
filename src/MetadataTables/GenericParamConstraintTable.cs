@@ -58,7 +58,7 @@ namespace Runic.Dotnet
                 public class GenericParamConstraintTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     GenericParamConstraintTable _parent;
-                    internal GenericParamConstraintTable Parent { get { return _parent; } }
+                    public GenericParamConstraintTable Parent { get { return _parent; } }
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }

@@ -45,6 +45,8 @@ namespace Runic.Dotnet
                 public FieldRVATableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public class FieldRVATableRow : MetadataTableRow
                 {
+                    FieldRVATable _parent;
+                    public FieldRVATable Parent { get { return _parent; } }
                     uint _rva;
                     public uint RelativeVirtualAddress { get { return _rva; } set { _rva = value; } }
                     FieldTable.FieldTableRow _field;
@@ -52,22 +54,25 @@ namespace Runic.Dotnet
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal FieldRVATableRow(uint row, uint relativeVirtualAddress, FieldTable.FieldTableRow Field)
+                    internal FieldRVATableRow(FieldRVATable parent, uint row, uint relativeVirtualAddress, FieldTable.FieldTableRow Field)
                     {
+                        _parent = parent;
                         _row = row;
                         _rva = relativeVirtualAddress;
                         _field = Field;
                     }
-                    internal FieldRVATableRow(uint row, FieldTable fieldTable, BinaryReader reader)
+                    internal FieldRVATableRow(FieldRVATable parent, uint row, FieldTable fieldTable, BinaryReader reader)
                     {
+                        _parent = parent;
                         _row = row;
                         _rva = reader.ReadUInt32();
                         uint fieldIndex = fieldTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _field = fieldTable[fieldIndex];
                     }
 #if NET6_0_OR_GREATER
-                    internal FieldRVATableRow(uint row, FieldTable fieldTable, Span<byte> data, ref uint offset)
+                    internal FieldRVATableRow(FieldRVATable parent, uint row, FieldTable fieldTable, Span<byte> data, ref uint offset)
                     {
+                        _parent = parent;
                         _row = row;
                         _rva = BitConverterLE.ToUInt32(data, offset); offset += 4;
                         uint fieldIndex = 0; if (fieldTable.LargeIndices) { fieldIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { fieldIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
@@ -91,7 +96,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        FieldRVATableRow row = new FieldRVATableRow((uint)(_rows.Count + 1), relativeVirtualAddress, Field);
+                        FieldRVATableRow row = new FieldRVATableRow(this, (uint)(_rows.Count + 1), relativeVirtualAddress, Field);
                         _rows.Add(row);
                         return row;
                     }
@@ -103,7 +108,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new FieldRVATableRow((uint)(n + 1), fieldTable, reader));
+                        _rows.Add(new FieldRVATableRow(this, (uint)(n + 1), fieldTable, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -111,7 +116,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new FieldRVATableRow((uint)(n + 1), fieldTable, data, ref offset));
+                        _rows.Add(new FieldRVATableRow(this, (uint)(n + 1), fieldTable, data, ref offset));
                     }
                 }
 #endif

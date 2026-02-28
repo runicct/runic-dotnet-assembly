@@ -55,6 +55,7 @@ namespace Runic.Dotnet
                 public class EventTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics
                 {
                     EventTable _parent;
+                    public EventTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     ITypeDefOrRefOrSpec _type;

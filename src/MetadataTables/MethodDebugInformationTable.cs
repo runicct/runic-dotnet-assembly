@@ -37,6 +37,8 @@ namespace Runic.Dotnet
                 List<MethodDebugInformationTableRow> _rows = new List<MethodDebugInformationTableRow>();
                 public class MethodDebugInformationTableRow : MetadataTableRow
                 {
+                    MethodDebugInformationTable _parent;
+                    public MethodDebugInformationTable Parent { get { return _parent; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
 #if NET6_0_OR_GREATER
@@ -52,17 +54,19 @@ namespace Runic.Dotnet
 #endif
                     public override uint Length { get { return 0x02; } }
 #if NET6_0_OR_GREATER
-                    internal MethodDebugInformationTableRow(uint row, DocumentTable.DocumentTableRow? document, Heap.BlobHeap.Blob? sequencePoint)
+                    internal MethodDebugInformationTableRow(MethodDebugInformationTable parent, uint row, DocumentTable.DocumentTableRow? document, Heap.BlobHeap.Blob? sequencePoint)
 #else
-                    internal MethodDebugInformationTableRow(uint row, DocumentTable.DocumentTableRow document, Heap.BlobHeap.Blob sequencePoint)
+                    internal MethodDebugInformationTableRow(MethodDebugInformationTable parent, uint row, DocumentTable.DocumentTableRow document, Heap.BlobHeap.Blob sequencePoint)
 #endif
                     {
+                        _parent = parent;
                         _row = row;
                         _document = document;
                         _sequencePoint = sequencePoint;
                     }
-                    internal MethodDebugInformationTableRow(uint row, DocumentTable documentTable, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    internal MethodDebugInformationTableRow(MethodDebugInformationTable parent, uint row, DocumentTable documentTable, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
                     {
+                        _parent = parent;
                         _row = row;
                         uint documentIndex = documentTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _document = documentIndex == 0 ? null : documentTable[documentIndex];
@@ -70,8 +74,9 @@ namespace Runic.Dotnet
                         _sequencePoint = sequencePointIndex == 0 ? null : new Heap.BlobHeap.Blob(blobHeap, sequencePointIndex);
                     }
 #if NET6_0_OR_GREATER
-                    internal MethodDebugInformationTableRow(uint row, DocumentTable documentTable, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                    internal MethodDebugInformationTableRow(MethodDebugInformationTable parent, uint row, DocumentTable documentTable, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
+                        _parent = parent;
                         _row = row;
                         uint documentIndex = 0; if (documentTable.LargeIndices) { documentIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { documentIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         uint sequencePointIndex = 0; if (blobHeap.LargeIndices) { sequencePointIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { sequencePointIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
@@ -103,7 +108,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        MethodDebugInformationTableRow row = new MethodDebugInformationTableRow((uint)(_rows.Count + 1), document, sequencePoint);
+                        MethodDebugInformationTableRow row = new MethodDebugInformationTableRow(this, (uint)(_rows.Count + 1), document, sequencePoint);
                         _rows.Add(row);
                         return row;
                     }
@@ -115,7 +120,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new MethodDebugInformationTableRow((uint)(n + 1), documentTable, blobHeap, reader));
+                        _rows.Add(new MethodDebugInformationTableRow(this, (uint)(n + 1), documentTable, blobHeap, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -124,7 +129,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new MethodDebugInformationTableRow((uint)(n + 1), documentTable, blobHeap, data, ref offset));
+                        _rows.Add(new MethodDebugInformationTableRow(this, (uint)(n + 1), documentTable, blobHeap, data, ref offset));
                     }
                 }
 #endif

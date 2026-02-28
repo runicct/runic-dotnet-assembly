@@ -45,32 +45,36 @@ namespace Runic.Dotnet
                 public CustomAttributeTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public class CustomAttributeTableRow : MetadataTableRow
                 {
+                    CustomAttributeTable _parent;
+                    public CustomAttributeTable Parent { get { return _parent; } }
                     public override uint Length { get { return 3; } }
                     ICustomAttributeConstructor _constructor;
                     public ICustomAttributeConstructor Constructor { get { return _constructor; } }
-                    IHasCustomAttribute _parent;
-                    public IHasCustomAttribute Parent { get { return _parent; } }
+                    IHasCustomAttribute _target;
+                    public IHasCustomAttribute Target { get { return _target; } }
                     Heap.BlobHeap.Blob _value;
                     public Heap.BlobHeap.Blob Value { get { return _value; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal CustomAttributeTableRow(uint row, IHasCustomAttribute parent, ICustomAttributeConstructor constructor, Heap.BlobHeap.Blob value)
+                    internal CustomAttributeTableRow(CustomAttributeTable parent, uint row, IHasCustomAttribute target, ICustomAttributeConstructor constructor, Heap.BlobHeap.Blob value)
                     {
                         _row = row;
-                        _parent = parent;
+                        _target = target;
                         _constructor = constructor;
                         _value = value;
+                        _parent = parent;
                     }
 #if NET6_0_OR_GREATER
-                    internal CustomAttributeTableRow(uint row, Heap.BlobHeap blobHeap, MethodDefTable? methodDefTable, FieldTable? fieldTable, TypeRefTable? typeRefTable, TypeDefTable? typeDefTable, ParamTable? paramTable, InterfaceImplTable? interfaceImplTable, MemberRefTable? memberRefTable, ModuleTable? moduleTable, DeclSecurityTable? declSecurityTable, EventTable? eventTable, PropertyTable? propertyTable, TypeSpecTable? typeSpecTable, AssemblyTable? assemblyTable, AssemblyRefTable? assemblyRefTable, FileTable? fileTable, ExportedTypeTable? exportedTypeTable, ManifestResourceTable? manifestResourceTable, GenericParamTable? genericParamTable, GenericParamConstraintTable? genericParamConstraintTable, MethodSpecTable? methodSpecTable, System.IO.BinaryReader reader)
+                    internal CustomAttributeTableRow(CustomAttributeTable parent, uint row, Heap.BlobHeap blobHeap, MethodDefTable? methodDefTable, FieldTable? fieldTable, TypeRefTable? typeRefTable, TypeDefTable? typeDefTable, ParamTable? paramTable, InterfaceImplTable? interfaceImplTable, MemberRefTable? memberRefTable, ModuleTable? moduleTable, DeclSecurityTable? declSecurityTable, EventTable? eventTable, PropertyTable? propertyTable, TypeSpecTable? typeSpecTable, AssemblyTable? assemblyTable, AssemblyRefTable? assemblyRefTable, FileTable? fileTable, ExportedTypeTable? exportedTypeTable, ManifestResourceTable? manifestResourceTable, GenericParamTable? genericParamTable, GenericParamConstraintTable? genericParamConstraintTable, MethodSpecTable? methodSpecTable, System.IO.BinaryReader reader)
 #else
-                    internal CustomAttributeTableRow(uint row, Heap.BlobHeap blobHeap, MethodDefTable methodDefTable, FieldTable fieldTable, TypeRefTable typeRefTable, TypeDefTable typeDefTable, ParamTable paramTable, InterfaceImplTable interfaceImplTable, MemberRefTable memberRefTable, ModuleTable moduleTable, DeclSecurityTable declSecurityTable, EventTable eventTable, PropertyTable propertyTable, TypeSpecTable typeSpecTable, AssemblyTable assemblyTable, AssemblyRefTable assemblyRefTable, FileTable fileTable, ExportedTypeTable exportedTypeTable, ManifestResourceTable manifestResourceTable, GenericParamTable genericParamTable, GenericParamConstraintTable genericParamConstraintTable, MethodSpecTable methodSpecTable, System.IO.BinaryReader reader)
+                    internal CustomAttributeTableRow(CustomAttributeTable parent, uint row, Heap.BlobHeap blobHeap, MethodDefTable methodDefTable, FieldTable fieldTable, TypeRefTable typeRefTable, TypeDefTable typeDefTable, ParamTable paramTable, InterfaceImplTable interfaceImplTable, MemberRefTable memberRefTable, ModuleTable moduleTable, DeclSecurityTable declSecurityTable, EventTable eventTable, PropertyTable propertyTable, TypeSpecTable typeSpecTable, AssemblyTable assemblyTable, AssemblyRefTable assemblyRefTable, FileTable fileTable, ExportedTypeTable exportedTypeTable, ManifestResourceTable manifestResourceTable, GenericParamTable genericParamTable, GenericParamConstraintTable genericParamConstraintTable, MethodSpecTable methodSpecTable, System.IO.BinaryReader reader)
 #endif
                     {
+                        _parent = parent;
                         _row = row;
                         uint parentToken = 0;
                         if (HasCustomAttributeLargeIndices(methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable)) { parentToken = reader.ReadUInt32(); } else { parentToken = reader.ReadUInt16(); }
-                        _parent = HasCustomAttributeDecode(parentToken, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable);
+                        _target = HasCustomAttributeDecode(parentToken, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable);
                         uint constructorToken = 0;
                         if (CustomAttributeConstructorLargeIndices(methodDefTable, memberRefTable)) { constructorToken = reader.ReadUInt32(); } else { constructorToken = reader.ReadUInt16(); }
                         _constructor = CustomAttributeConstructorDecode(constructorToken, methodDefTable, memberRefTable);
@@ -78,12 +82,12 @@ namespace Runic.Dotnet
                         _value = new Heap.BlobHeap.Blob(blobHeap, valueIndex);
                     }
 #if NET6_0_OR_GREATER
-                    internal CustomAttributeTableRow(uint row, Heap.BlobHeap blobHeap, MethodDefTable? methodDefTable, FieldTable? fieldTable, TypeRefTable? typeRefTable, TypeDefTable? typeDefTable, ParamTable? paramTable, InterfaceImplTable? interfaceImplTable, MemberRefTable? memberRefTable, ModuleTable? moduleTable, DeclSecurityTable? declSecurityTable, EventTable? eventTable, PropertyTable? propertyTable, TypeSpecTable? typeSpecTable, AssemblyTable? assemblyTable, AssemblyRefTable? assemblyRefTable, FileTable? fileTable, ExportedTypeTable? exportedTypeTable, ManifestResourceTable? manifestResourceTable, GenericParamTable? genericParamTable, GenericParamConstraintTable? genericParamConstraintTable, MethodSpecTable? methodSpecTable, Span<byte> data, ref uint offset)
+                    internal CustomAttributeTableRow(CustomAttributeTable parent, uint row, Heap.BlobHeap blobHeap, MethodDefTable? methodDefTable, FieldTable? fieldTable, TypeRefTable? typeRefTable, TypeDefTable? typeDefTable, ParamTable? paramTable, InterfaceImplTable? interfaceImplTable, MemberRefTable? memberRefTable, ModuleTable? moduleTable, DeclSecurityTable? declSecurityTable, EventTable? eventTable, PropertyTable? propertyTable, TypeSpecTable? typeSpecTable, AssemblyTable? assemblyTable, AssemblyRefTable? assemblyRefTable, FileTable? fileTable, ExportedTypeTable? exportedTypeTable, ManifestResourceTable? manifestResourceTable, GenericParamTable? genericParamTable, GenericParamConstraintTable? genericParamConstraintTable, MethodSpecTable? methodSpecTable, Span<byte> data, ref uint offset)
                     {
                         _row = row;
                         uint parentToken = 0;
                         if (HasCustomAttributeLargeIndices(methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable)) { parentToken = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentToken = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parent = HasCustomAttributeDecode(parentToken, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable);
+                        _target = HasCustomAttributeDecode(parentToken, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable);
                         uint constructorToken = 0;
                         if (CustomAttributeConstructorLargeIndices(methodDefTable, memberRefTable)) { constructorToken = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { constructorToken = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _constructor = CustomAttributeConstructorDecode(constructorToken, methodDefTable, memberRefTable);
@@ -97,18 +101,18 @@ namespace Runic.Dotnet
                     internal void Save(MethodDefTable methodDefTable, FieldTable fieldTable, TypeRefTable typeRefTable, TypeDefTable typeDefTable, ParamTable paramTable, InterfaceImplTable interfaceImplTable, MemberRefTable memberRefTable, ModuleTable moduleTable, DeclSecurityTable declSecurityTable, EventTable eventTable, PropertyTable propertyTable, TypeSpecTable typeSpecTable, AssemblyTable assemblyTable, AssemblyRefTable assemblyRefTable, FileTable fileTable, ExportedTypeTable exportedTypeTable, ManifestResourceTable manifestResourceTable, GenericParamTable genericParamTable, GenericParamConstraintTable genericParamConstraintTable, MethodSpecTable methodSpecTable, BinaryWriter binaryWriter)
 #endif
                     {
-                        uint parentToken = HasCustomAttributeEncode(_parent);
+                        uint parentToken = HasCustomAttributeEncode(_target);
                         if (HasCustomAttributeLargeIndices(methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable)) { binaryWriter.Write(parentToken); } else { binaryWriter.Write((ushort)parentToken); }
                         uint constructorToken = CustomAttributeConstructorEncode(_constructor);
                         if (CustomAttributeConstructorLargeIndices(methodDefTable, memberRefTable)) { binaryWriter.Write(constructorToken); } else { binaryWriter.Write((ushort)constructorToken); }
                         binaryWriter.Write(_value.Index);
                     }
                 }
-                public CustomAttributeTableRow Add(IHasCustomAttribute parent, ICustomAttributeConstructor constructor, Heap.BlobHeap.Blob value)
+                public CustomAttributeTableRow Add(IHasCustomAttribute target, ICustomAttributeConstructor constructor, Heap.BlobHeap.Blob value)
                 {
                     lock (this)
                     {
-                        CustomAttributeTableRow row = new CustomAttributeTableRow((uint)(_rows.Count + 1), parent, constructor, value);
+                        CustomAttributeTableRow row = new CustomAttributeTableRow(this, (uint)(_rows.Count + 1), target, constructor, value);
                         _rows.Add(row);
                         return row;
                     }
@@ -135,7 +139,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new CustomAttributeTableRow(n + 1, blobHeap, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable, reader));
+                        _rows.Add(new CustomAttributeTableRow(this, n + 1, blobHeap, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -144,7 +148,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new CustomAttributeTableRow(n + 1, blobHeap, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable, data, ref offset));
+                        _rows.Add(new CustomAttributeTableRow(this, n + 1, blobHeap, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, eventTable, propertyTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable, data, ref offset));
                     }
                 }
 #endif

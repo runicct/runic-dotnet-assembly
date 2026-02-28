@@ -42,6 +42,7 @@ namespace Runic.Dotnet
                 public class TypeRefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IResolutionScope, IMemberRefParent, IHasCustomAttribute
                 {
                     TypeRefTable _parent;
+                    public TypeRefTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.StringHeap.String _namespace;

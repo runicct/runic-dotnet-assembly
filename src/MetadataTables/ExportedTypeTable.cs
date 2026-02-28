@@ -63,7 +63,7 @@ namespace Runic.Dotnet
                 public class ExportedTypeTableRow : MetadataTableRow, IHasCustomAttribute, IImplementation
                 {
                     ExportedTypeTable _parent;
-                    internal ExportedTypeTable Parent { get { return _parent; } }
+                    public ExportedTypeTable Parent { get { return _parent; } }
                     public override uint Length { get { return 5; } }
                     uint _row;
                     public override uint Row { get { return _row; } }

@@ -46,7 +46,7 @@ namespace Runic.Dotnet
                     public Heap.StringHeap.String Name { get { return _name; } }
                     public override uint Length { get { return 0x03; } }
                     LocalVariableTable _parent;
-                    internal LocalVariableTable Parent { get { return _parent; } set { _parent = value; } }
+                    public LocalVariableTable Parent { get { return _parent; } internal set { _parent = value; } }
                     internal LocalVariableTableRow(LocalVariableTable parent, uint row, LocalVariableAttributes attributes, ushort index, Heap.StringHeap.String name)
                     {
                         _row = row;

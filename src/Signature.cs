@@ -497,7 +497,7 @@ namespace Runic.Dotnet
                 return signature.ToArray();
             }
 #if NET6_0_OR_GREATER
-            public static byte[] EncodeStandaloneMethodSignature(MetadataTable.TypeDefTable? typeDefTable, MetadataTable.TypeRefTable? typeRefTable, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            public static byte[] EncodeStandaloneMethodSignature   (MetadataTable.TypeDefTable? typeDefTable, MetadataTable.TypeRefTable? typeRefTable, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
 #else
             public static byte[] EncodeStandaloneMethodSignature(MetadataTable.TypeDefTable typeDefTable, MetadataTable.TypeRefTable typeRefTable, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
 #endif

@@ -50,32 +50,33 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        ClassLayoutTableRow row = new ClassLayoutTableRow((uint)(_rows.Count + 1), packingSize, classSize, parent);
+                        ClassLayoutTableRow row = new ClassLayoutTableRow(this, (uint)(_rows.Count + 1), packingSize, classSize, parent);
                         _rows.Add(row);
                         return row;
                     }
                 }
                 public class ClassLayoutTableRow : MetadataTableRow
                 {
-
+                    ClassLayoutTable _parent;
+                    public ClassLayoutTable Parent { get { return _parent; } }
                     public override uint Length { get { return 3; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    TypeDefTable.TypeDefTableRow _parent;
-                    public TypeDefTable.TypeDefTableRow Parent { get { return _parent; } }
+                    TypeDefTable.TypeDefTableRow _target;
+                    public TypeDefTable.TypeDefTableRow Target { get { return _target; } }
                     ushort _packingSize;
                     public ushort PackingSize { get { return _packingSize; } }
                     uint _classSize;
                     public uint ClassSize { get { return _classSize; } }
-                    internal ClassLayoutTableRow(uint row, ushort packingSize, uint classSize, TypeDefTable.TypeDefTableRow parent)
+                    internal ClassLayoutTableRow(ClassLayoutTable parent, uint row, ushort packingSize, uint classSize, TypeDefTable.TypeDefTableRow target)
                     {
                         _parent = parent;
                         _row = row;
                         _packingSize = packingSize;
                         _classSize = classSize;
-                        _parent = parent;
+                        _target = target;
                     }
-                    internal ClassLayoutTableRow(uint row)
+                    internal ClassLayoutTableRow(ClassLayoutTable parent, uint row)
                     {
                         _row = row;
                     }
@@ -91,7 +92,7 @@ namespace Runic.Dotnet
                         if (typeDefTable != null)
                         {
                             if (typeDefTable.LargeIndices) { parentIndex = reader.ReadUInt32(); } else { parentIndex = reader.ReadUInt16(); }
-                            _parent = typeDefTable[(uint)parentIndex];
+                            _target = typeDefTable[(uint)parentIndex];
                         }
                         else
                         {
@@ -108,7 +109,7 @@ namespace Runic.Dotnet
                         if (typeDefTable != null)
                         {
                             if (typeDefTable.LargeIndices) { parentIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                            _parent = typeDefTable[(uint)parentIndex];
+                            _target = typeDefTable[(uint)parentIndex];
                         }
                         else
                         {
@@ -125,7 +126,7 @@ namespace Runic.Dotnet
                     {
                         binaryWriter.Write(_packingSize);
                         binaryWriter.Write(_classSize);
-                        if (_parent.Parent.LargeIndices) { binaryWriter.Write((uint)_parent.Row); } else { binaryWriter.Write((ushort)_parent.Row); }
+                        if (_target.Parent.LargeIndices) { binaryWriter.Write((uint)_target.Row); } else { binaryWriter.Write((ushort)_target.Row); }
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -162,7 +163,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new ClassLayoutTableRow((uint)(_rows.Count + 1)));
+                        _rows.Add(new ClassLayoutTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }

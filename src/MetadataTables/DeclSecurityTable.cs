@@ -45,24 +45,28 @@ namespace Runic.Dotnet
                 public DeclSecurityTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public class DeclSecurityTableRow : MetadataTableRow, IHasCustomAttribute
                 {
+                    DeclSecurityTable _parent;
+                    public DeclSecurityTable Parent { get { return _parent; } }
                     public override uint Length { get { return 3; } }
                     ushort _action;
                     public ushort Action { get { return _action; } }
-                    IHasDeclSecurity _parent;
-                    public IHasDeclSecurity Parent { get { return _parent; } }
+                    IHasDeclSecurity _target;
+                    public IHasDeclSecurity Target { get { return _target; } }
                     Heap.BlobHeap.Blob _permissionSet;
                     public Heap.BlobHeap.Blob PermissionSet { get { return _permissionSet; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal DeclSecurityTableRow(uint row)
+                    internal DeclSecurityTableRow(DeclSecurityTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
-                    internal DeclSecurityTableRow(uint row, ushort action, IHasDeclSecurity hasDeclSecurity, Heap.BlobHeap.Blob permissionSet)
+                    internal DeclSecurityTableRow(DeclSecurityTable parent, uint row, ushort action, IHasDeclSecurity hasDeclSecurity, Heap.BlobHeap.Blob permissionSet)
                     {
+                        _parent = parent;
                         _row = row;
                         _action = action;
-                        _parent = hasDeclSecurity;
+                        _target = hasDeclSecurity;
                         _permissionSet = permissionSet;
                     }
 #if NET6_0_OR_GREATER
@@ -74,7 +78,7 @@ namespace Runic.Dotnet
                         _action = reader.ReadUInt16();
                         uint hasDeclSecurityToken = 0;
                         if (HasDeclSecurityLargeIndices(typeDefTable, methodDefTable, assemblyTable)) { hasDeclSecurityToken = reader.ReadUInt32(); } else { hasDeclSecurityToken = reader.ReadUInt16(); }
-                        _parent = HasDeclSecurityDecode(hasDeclSecurityToken, typeDefTable, methodDefTable, assemblyTable);
+                        _target = HasDeclSecurityDecode(hasDeclSecurityToken, typeDefTable, methodDefTable, assemblyTable);
                         uint blobIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _permissionSet = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
                     }
@@ -84,7 +88,7 @@ namespace Runic.Dotnet
                         _action = BitConverterLE.ToUInt16(data, offset); offset += 2;
                         uint hasDeclSecurityToken = 0;
                         if (HasDeclSecurityLargeIndices(typeDefTable, methodDefTable, assemblyTable)) { hasDeclSecurityToken = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { hasDeclSecurityToken = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parent = HasDeclSecurityDecode(hasDeclSecurityToken, typeDefTable, methodDefTable, assemblyTable);
+                        _target = HasDeclSecurityDecode(hasDeclSecurityToken, typeDefTable, methodDefTable, assemblyTable);
                         uint blobIndex = 0; if (blobHeap.LargeIndices) { blobIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { blobIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _permissionSet = new Heap.BlobHeap.Blob(blobHeap, blobIndex);
                     }
@@ -97,16 +101,16 @@ namespace Runic.Dotnet
 #endif
                     {
                         binaryWriter.Write(_action);
-                        uint hasSecurityToken = HasDeclSecurityEncode(_parent);
+                        uint hasSecurityToken = HasDeclSecurityEncode(_target);
                         if (HasDeclSecurityLargeIndices(typeDefTable, methodDefTable, assemblyTable)) { binaryWriter.Write((uint)hasSecurityToken); } else { binaryWriter.Write((ushort)hasSecurityToken); }
                         binaryWriter.Write(_permissionSet.Index);
                     }
                 }
-                public DeclSecurityTableRow Add(ushort action, IHasDeclSecurity parent, Heap.BlobHeap.Blob permissionSet)
+                public DeclSecurityTableRow Add(ushort action, IHasDeclSecurity target, Heap.BlobHeap.Blob permissionSet)
                 {
                     lock (this)
                     {
-                        DeclSecurityTableRow row = new DeclSecurityTableRow((uint)(_rows.Count + 1), action, parent, permissionSet);
+                        DeclSecurityTableRow row = new DeclSecurityTableRow(this, (uint)(_rows.Count + 1), action, target, permissionSet);
                         _rows.Add(row);
                         return row;
                     }
@@ -126,7 +130,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new DeclSecurityTableRow((uint)(n + 1)));
+                        _rows.Add(new DeclSecurityTableRow(this, (uint)(n + 1)));
                     }
                 }
 #if NET6_0_OR_GREATER

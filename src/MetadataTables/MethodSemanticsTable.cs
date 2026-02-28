@@ -58,7 +58,7 @@ namespace Runic.Dotnet
                 public class MethodSemanticsTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     MethodSemanticsTable _parent;
-                    internal MethodSemanticsTable Parent { get { return _parent; } }
+                    public MethodSemanticsTable Parent { get { return _parent; } }
                     MethodDefTable.MethodDefTableRow _method;
                     public MethodDefTable.MethodDefTableRow Method { get { return _method; } }
                     public override uint Length { get { return 3; } }

@@ -58,7 +58,7 @@ namespace Runic.Dotnet
                 public class FileTableRow : MetadataTableRow, IHasCustomAttribute, IImplementation
                 {
                     FileTable _parent;
-                    internal FileTable Parent { get { return _parent; } }
+                    public FileTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     public override uint Length { get { return 3; } }

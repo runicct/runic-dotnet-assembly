@@ -40,40 +40,40 @@ namespace Runic.Dotnet
                 public class ImportScopeTableRow : MetadataTableRow
                 {
                     public override uint Length { get { return 2; } }
-                    ImportScopeTable _table;
-                    internal ImportScopeTable Table { get { return _table; } }
+                    ImportScopeTable _parent;
+                    public ImportScopeTable Parent { get { return _parent; } }
 #if NET6_0_OR_GREATER
-                    ImportScopeTableRow? _parent = null;
-                    public ImportScopeTableRow? Parent { get { return _parent; } }
+                    ImportScopeTableRow? _parentScope = null;
+                    public ImportScopeTableRow? ParentScope { get { return _parentScope; } }
 #else
-                    ImportScopeTableRow _parent = null;
-                    public ImportScopeTableRow Parent { get { return _parent; } }
+                    ImportScopeTableRow _parentScope = null;
+                    public ImportScopeTableRow ParentScope { get { return _parentScope; } }
 #endif
                     Heap.BlobHeap.Blob _imports;
                     public Heap.BlobHeap.Blob Import { get { return _imports; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
 #if NET6_0_OR_GREATER
-                    internal ImportScopeTableRow(ImportScopeTable table, uint row, ImportScopeTableRow? parent, Heap.BlobHeap.Blob imports)
+                    internal ImportScopeTableRow(ImportScopeTable parent, uint row, ImportScopeTableRow? parentScope, Heap.BlobHeap.Blob imports)
 #else
-                    internal ImportScopeTableRow(ImportScopeTable table, uint row, ImportScopeTableRow parent, Heap.BlobHeap.Blob imports)
+                    internal ImportScopeTableRow(ImportScopeTable parent, uint row, ImportScopeTableRow parentScope, Heap.BlobHeap.Blob imports)
 #endif
                     {
-                        _table = table;
+                        _parent = parent;
                         _row = row;
                         _imports = imports;
-                        _parent = parent;
+                        _parentScope = parentScope;
                     }
 
-                    internal ImportScopeTableRow(ImportScopeTable table, uint row)
+                    internal ImportScopeTableRow(ImportScopeTable parent, uint row)
                     {
-                        _table = table;
+                        _parent = parent;
                         _row = row;
                     }
                     internal void Load(ImportScopeTable parent, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
                     {
                         uint parentIndex = parent.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        if (parentIndex != 0) { _parent = parent[(uint)parentIndex]; }
+                        if (parentIndex != 0) { _parentScope = parent[(uint)parentIndex]; }
                         uint importsIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _imports = new Heap.BlobHeap.Blob(blobHeap, importsIndex);
                     }
@@ -82,7 +82,7 @@ namespace Runic.Dotnet
                     {
                         uint parentIndex = 0;
                         if (parent.LargeIndices) { parentIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        if (parentIndex != 0) { _parent = parent[(uint)parentIndex]; }
+                        if (parentIndex != 0) { _parentScope = parent[(uint)parentIndex]; }
                         uint importsIndex = 0;
                         if (blobHeap.LargeIndices) { importsIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { importsIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _imports = new Heap.BlobHeap.Blob(blobHeap, importsIndex);
@@ -90,13 +90,13 @@ namespace Runic.Dotnet
 #endif
                     internal void Save(BinaryWriter binaryWriter)
                     {
-                        if (_parent == null)
+                        if (_parentScope == null)
                         {
-                            if (_table.LargeIndices) { binaryWriter.Write((uint)0); } else { binaryWriter.Write((ushort)0); }
+                            if (_parent.LargeIndices) { binaryWriter.Write((uint)0); } else { binaryWriter.Write((ushort)0); }
                         }
                         else
                         {
-                            if (_table.LargeIndices) { binaryWriter.Write((uint)_parent.Row); } else { binaryWriter.Write((ushort)_parent.Row); }
+                            if (_parent.LargeIndices) { binaryWriter.Write((uint)_parentScope.Row); } else { binaryWriter.Write((ushort)_parentScope.Row); }
                         }
                         if (_imports.Heap.LargeIndices) { binaryWriter.Write((uint)_imports.Index); } else { binaryWriter.Write((ushort)_imports.Index); }
                     }

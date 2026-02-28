@@ -39,6 +39,8 @@ namespace Runic.Dotnet
             {
                 public class ModuleTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute
                 {
+                    ModuleTable _parent;
+                    public ModuleTable Parent { get { return _parent; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
                     Heap.GUIDHeap.GUID _mvid;
@@ -50,12 +52,14 @@ namespace Runic.Dotnet
                     public ushort Generation { get { return _generation; } }
                     internal ModuleTableRow(ModuleTable parent, uint row, Heap.StringHeap.String name, Heap.GUIDHeap.GUID mvid)
                     {
+                        _parent = parent;
                         _row = row;
                         _name = name;
                         _mvid = mvid;
                     }
                     internal ModuleTableRow(ModuleTable parent, uint row, Heap.StringHeap stringHeap, Heap.GUIDHeap guidHeap, BinaryReader reader)
                     {
+                        _parent = parent;
                         short generation = reader.ReadInt16();
                         uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         uint mvidIndex = guidHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();

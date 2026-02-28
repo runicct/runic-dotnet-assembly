@@ -59,7 +59,7 @@ namespace Runic.Dotnet
                 public class ManifestResourceTableRow : MetadataTableRow, IHasCustomAttribute
                 {
                     ManifestResourceTable _parent;
-                    internal ManifestResourceTable Parent { get { return _parent; } }
+                    public ManifestResourceTable Parent { get { return _parent; } }
                     public override uint Length { get { return 4; } }
                     uint _row;
                     public override uint Row { get { return _row; } }

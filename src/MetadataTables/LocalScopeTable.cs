@@ -97,7 +97,7 @@ namespace Runic.Dotnet
                     internal void Save(BinaryWriter binaryWriter)
                     {
                         if (_method.Parent.LargeIndices) { binaryWriter.Write((uint)_method.Row); } else { binaryWriter.Write((ushort)_method.Row); }
-                        if (_importScope.Table.LargeIndices) { binaryWriter.Write((uint)_importScope.Row); } else { binaryWriter.Write((ushort)_importScope.Row); }
+                        if (_importScope.Parent.LargeIndices) { binaryWriter.Write((uint)_importScope.Row); } else { binaryWriter.Write((ushort)_importScope.Row); }
                         if (_variableList.Parent.LargeIndices) { binaryWriter.Write((uint)_variableList.Row); } else { binaryWriter.Write((ushort)_variableList.Row); }
                         if (_constantList.Parent.LargeIndices) { binaryWriter.Write((uint)_constantList.Row); } else { binaryWriter.Write((ushort)_constantList.Row); }
                         binaryWriter.Write(_startOffset);

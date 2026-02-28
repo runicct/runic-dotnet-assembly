@@ -24,10 +24,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 
 namespace Runic.Dotnet
 {
@@ -45,84 +45,119 @@ namespace Runic.Dotnet
                 public ImplMapTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
                 public class ImplMapTableRow : MetadataTableRow
                 {
+                    ImplMapTable _parent;
+                    public ImplMapTable Parent { get { return _parent; } }
                     public override uint Length { get { return 4; } }
                     ushort _flags;
-                    uint _memberForwardedToken;
-                    public uint MemberForwardedToken { get { return _memberForwardedToken; } }
+                    IMemberForwarded _memberForwarded;
+                    public IMemberForwarded MemberForwarded { get { return _memberForwarded; } }
                     Heap.StringHeap.String _name;
                     public Heap.StringHeap.String Name { get { return _name; } }
-                    uint _importScope;
-                    public uint ImportScope { get { return _importScope; } }
+                    ModuleRefTable.ModuleRefTableRow _importScope;
+                    public ModuleRefTable.ModuleRefTableRow ImportScope { get { return _importScope; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal ImplMapTableRow(uint row, ushort flags, uint memberForwardedToken, Heap.StringHeap.String name, uint importScope)
+                    internal ImplMapTableRow(ImplMapTable parent, uint row, ushort flags, IMemberForwarded memberForwarded, Heap.StringHeap.String name, ModuleRefTable.ModuleRefTableRow importScope)
                     {
+                        _parent = parent;
                         _row = row;
                         _flags = flags;
                         _name = name;
                         _importScope = importScope;
-                        _memberForwardedToken = memberForwardedToken;
-                    }
-                    internal ImplMapTableRow(uint row, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
-                    {
-                        _row = row;
-                        _flags = reader.ReadUInt16();
-                        _memberForwardedToken = reader.ReadUInt16();
-                        uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _importScope = reader.ReadUInt16();
+                        _memberForwarded = memberForwarded;
                     }
 #if NET6_0_OR_GREATER
-                    internal ImplMapTableRow(uint row, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
+                    internal ImplMapTableRow(ImplMapTable parent, uint row, ModuleRefTable? moduleRefTable, FieldTable? fieldTable, MethodDefTable? methodDefTable, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+#else
+                    internal ImplMapTableRow(ImplMapTable parent, uint row, ModuleRefTable moduleRefTable, FieldTable fieldTable, MethodDefTable methodDefTable, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+#endif
                     {
+                        _parent = parent;
+                        _row = row;
+                        _flags = reader.ReadUInt16();
+                        uint memberForwardedToken;
+                        if (MemberForwardedLargeIndices(fieldTable, methodDefTable)) { memberForwardedToken = reader.ReadUInt32(); } else { memberForwardedToken = reader.ReadUInt16(); }
+                        _memberForwarded = MemberForwardedDecode(memberForwardedToken, fieldTable, methodDefTable);
+                        uint nameIndex = stringHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
+                        _name = new Heap.StringHeap.String(stringHeap, nameIndex);
+                        if (moduleRefTable == null) { reader.ReadUInt16(); _importScope = null; }
+                        else
+                        {
+                            if (moduleRefTable.LargeIndices) { _importScope = moduleRefTable[reader.ReadUInt32()]; } else { _importScope = moduleRefTable[reader.ReadUInt16()]; }
+                        }
+                    }
+#if NET6_0_OR_GREATER
+                    internal ImplMapTableRow(ImplMapTable parent, uint row, ModuleRefTable? moduleRefTable, FieldTable? fieldTable, MethodDefTable? methodDefTable, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
+                    {
+                        _parent = parent;
                         _row = row;
                         _flags = BitConverterLE.ToUInt16(data, offset); offset += 2;
-                        _memberForwardedToken = BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        uint memberForwardedToken;
+                        if (MemberForwardedLargeIndices(fieldTable, methodDefTable)) { memberForwardedToken = BitConverterLE.ToUInt32(data, offset); offset += 2; } else { memberForwardedToken = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        _memberForwarded = MemberForwardedDecode(memberForwardedToken, fieldTable, methodDefTable);
                         uint nameIndex = 0; if (stringHeap.LargeIndices) { nameIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { nameIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _name = new Heap.StringHeap.String(stringHeap, nameIndex);
-                        _importScope = BitConverterLE.ToUInt16(data, offset); offset += 2;
+                        if (moduleRefTable == null) { offset += 2; _importScope = null; }
+                        else
+                        {
+                            if (moduleRefTable.LargeIndices) { _importScope = moduleRefTable[BitConverterLE.ToUInt32(data, offset)]; offset += 4; } else { _importScope = moduleRefTable[BitConverterLE.ToUInt16(data, offset)]; offset += 2; }
+                        }
                     }
 #endif
-                    internal void Save(BinaryWriter binaryWriter)
+
+#if NET6_0_OR_GREATER
+                    internal void Save(FieldTable? fieldTable, MethodDefTable? methodDefTable, BinaryWriter binaryWriter)
+#else
+                    internal void Save(FieldTable fieldTable, MethodDefTable methodDefTable, BinaryWriter binaryWriter)
+#endif
                     {
                         binaryWriter.Write(_flags);
-                        binaryWriter.Write((ushort)_memberForwardedToken);
+                        uint memberForwardedToken = MemberForwardedEncode(_memberForwarded);
+                        if (MemberForwardedLargeIndices(fieldTable, methodDefTable)) { binaryWriter.Write((uint)memberForwardedToken); } else { binaryWriter.Write((ushort)memberForwardedToken); }
                         if (_name.Heap.LargeIndices) { binaryWriter.Write(_name.Index); } else { binaryWriter.Write((ushort)_name.Index); }
-                        binaryWriter.Write((ushort)_importScope);
+                        if (_importScope.Parent.LargeIndices) { binaryWriter.Write(_importScope.Row); } else { binaryWriter.Write((ushort)_importScope.Row); }
                     }
                 }
-                public ImplMapTableRow Add(ushort flags, uint memberForwardToken, Heap.StringHeap.String name, uint importScope)
+                public ImplMapTableRow Add(ushort flags, IMemberForwarded memberForwarded, Heap.StringHeap.String name, ModuleRefTable.ModuleRefTableRow importScope)
                 {
                     lock (this)
                     {
-                        ImplMapTableRow row = new ImplMapTableRow((uint)(_rows.Count + 1), flags, memberForwardToken, name, importScope);
+                        ImplMapTableRow row = new ImplMapTableRow(this, (uint)(_rows.Count + 1), flags, memberForwarded, name, importScope);
                         _rows.Add(row);
                         return row;
                     }
                 }
-                internal void Save(BinaryWriter binaryWriter)
+#if NET6_0_OR_GREATER
+                internal void Save(FieldTable? fieldTable, MethodDefTable? methodDefTable, BinaryWriter binaryWriter)
+#else
+                internal void Save(FieldTable fieldTable, MethodDefTable methodDefTable,BinaryWriter binaryWriter)
+#endif
                 {
                     for (int n = 0; n < _rows.Count; n++)
                     {
-                        _rows[n].Save(binaryWriter);
+                        _rows[n].Save(fieldTable, methodDefTable, binaryWriter);
                     }
                 }
                 internal ImplMapTable()
                 {
                 }
-                internal ImplMapTable(uint rows, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+#if NET6_0_OR_GREATER
+                internal ImplMapTable(uint rows, ModuleRefTable? moduleRefTable, FieldTable? fieldTable, MethodDefTable? methodDefTable, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+#else
+                internal ImplMapTable(uint rows, ModuleRefTable moduleRefTable, FieldTable fieldTable, MethodDefTable methodDefTable, Heap.StringHeap stringHeap, System.IO.BinaryReader reader)
+#endif
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new ImplMapTableRow((uint)(n + 1), stringHeap, reader));
+                        _rows.Add(new ImplMapTableRow(this, (uint)(n + 1), moduleRefTable, fieldTable, methodDefTable, stringHeap, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal ImplMapTable(uint rows, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
+                internal ImplMapTable(uint rows, ModuleRefTable? moduleRefTable, FieldTable? fieldTable, MethodDefTable? methodDefTable, Heap.StringHeap stringHeap, Span<byte> data, ref uint offset)
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new ImplMapTableRow((uint)(n + 1), stringHeap, data, ref offset));
+                        _rows.Add(new ImplMapTableRow(this, (uint)(n + 1), moduleRefTable, fieldTable, methodDefTable, stringHeap, data, ref offset));
                     }
                 }
 #endif

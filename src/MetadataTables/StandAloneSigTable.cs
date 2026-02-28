@@ -39,25 +39,30 @@ namespace Runic.Dotnet
             {
                 public class StandAloneSigTableRow : MetadataTableRow, IHasCustomAttribute
                 {
+                    StandAloneSigTable _parent;
+                    public StandAloneSigTable Parent { get { return _parent; } }
                     Heap.BlobHeap.Blob _signature;
                     public Heap.BlobHeap.Blob Signature { get { return _signature; } }
                     public override uint Length { get { return 1; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal StandAloneSigTableRow(uint row, Heap.BlobHeap.Blob signature)
+                    internal StandAloneSigTableRow(StandAloneSigTable parent, uint row, Heap.BlobHeap.Blob signature)
                     {
+                        _parent = parent;
                         _row = row;
                         _signature = signature;
                     }
-                    internal StandAloneSigTableRow(uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    internal StandAloneSigTableRow(StandAloneSigTable parent, uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
                     {
+                        _parent = parent;
                         _row = row;
                         uint signatureIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
                     }
 #if NET6_0_OR_GREATER
-                    internal StandAloneSigTableRow(uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                    internal StandAloneSigTableRow(StandAloneSigTable parent, uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
+                        _parent = parent;
                         _row = row;
                         uint signatureIndex = 0; if (blobHeap.LargeIndices) { signatureIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { signatureIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
@@ -89,7 +94,7 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        StandAloneSigTableRow row = new StandAloneSigTableRow((uint)(_rows.Count + 1), signature);
+                        StandAloneSigTableRow row = new StandAloneSigTableRow(this, (uint)(_rows.Count + 1), signature);
                         _rows.Add(row);
                         return row;
                     }
@@ -102,7 +107,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new StandAloneSigTableRow((uint)(n + 1), blobHeap, reader));
+                        _rows.Add(new StandAloneSigTableRow(this, (uint)(n + 1), blobHeap, reader));
                     }
                 }
 #if NET6_0_OR_GREATER
@@ -110,7 +115,7 @@ namespace Runic.Dotnet
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new StandAloneSigTableRow((uint)(n + 1), blobHeap, data, ref offset));
+                        _rows.Add(new StandAloneSigTableRow(this, (uint)(n + 1), blobHeap, data, ref offset));
                     }
                 }
 #endif

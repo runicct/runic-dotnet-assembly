@@ -50,34 +50,38 @@ namespace Runic.Dotnet
                 {
                     lock (this)
                     {
-                        EventMapTableRow row = new EventMapTableRow(parent, eventList);
+                        EventMapTableRow row = new EventMapTableRow(this, parent, eventList);
                         _rows.Add(row);
                         return row;
                     }
                 }
                 public class EventMapTableRow : MetadataTableRow
                 {
-                    TypeDefTable.TypeDefTableRow _parent;
-                    public TypeDefTable.TypeDefTableRow Parent { get { return _parent; } }
+                    EventMapTable _parent;
+                    public EventMapTable Parent { get { return _parent; } }
+                    TypeDefTable.TypeDefTableRow _parentType;
+                    public TypeDefTable.TypeDefTableRow ParentType { get { return _parentType; } }
                     EventTable.EventTableRow _eventList;
                     public EventTable.EventTableRow EventList { get { return _eventList; } internal set { _eventList = value; } }
                     public override uint Length { get { return 2; } }
                     uint _row;
                     public override uint Row { get { return _row; } }
-                    internal EventMapTableRow(TypeDefTable.TypeDefTableRow parent, EventTable.EventTableRow eventList)
+                    internal EventMapTableRow(EventMapTable parent, TypeDefTable.TypeDefTableRow parentType, EventTable.EventTableRow eventList)
                     {
                         _parent = parent;
+                        _parentType = parentType;
                         _eventList = eventList;
                     }
-                    internal EventMapTableRow(uint row)
+                    internal EventMapTableRow(EventMapTable parent, uint row)
                     {
+                        _parent = parent;
                         _row = row;
                     }
                     internal void Load(TypeDefTable typeDefTable, EventTable eventTable, BinaryReader reader)
                     {
                         uint parentIndex = 0;
                         if (typeDefTable.LargeIndices) { parentIndex = reader.ReadUInt32(); } else { parentIndex = reader.ReadUInt16(); }
-                        _parent = typeDefTable[(uint)parentIndex];
+                        _parentType = typeDefTable[(uint)parentIndex];
                         uint eventListIndex = 0;
                         if (eventTable.LargeIndices) { eventListIndex = reader.ReadUInt32(); } else { eventListIndex = reader.ReadUInt16(); }
                         _eventList = eventTable[(uint)eventListIndex];
@@ -88,7 +92,7 @@ namespace Runic.Dotnet
                     {
                         uint parentIndex = 0;
                         if (typeDefTable.LargeIndices) { parentIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { parentIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _parent = typeDefTable[(uint)parentIndex];
+                        _parentType = typeDefTable[(uint)parentIndex];
                         uint eventListIndex = 0;
                         if (eventTable.LargeIndices) { eventListIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { eventListIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _eventList = eventTable[(uint)eventListIndex];
@@ -96,7 +100,7 @@ namespace Runic.Dotnet
 #endif
                     internal void Save(TypeDefTable typeDefTable, EventTable eventTable, BinaryWriter binaryWriter)
                     {
-                        if (typeDefTable.LargeIndices) { binaryWriter.Write((uint)_parent.Row); } else { binaryWriter.Write((ushort)_parent.Row); }
+                        if (typeDefTable.LargeIndices) { binaryWriter.Write((uint)_parentType.Row); } else { binaryWriter.Write((ushort)_parentType.Row); }
                         if (eventTable.LargeIndices) { binaryWriter.Write((uint)_eventList.Row); } else { binaryWriter.Write((ushort)_eventList.Row); }
                     }
                 }
@@ -126,7 +130,7 @@ namespace Runic.Dotnet
                 {
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new EventMapTableRow((uint)(_rows.Count + 1)));
+                        _rows.Add(new EventMapTableRow(this, (uint)(_rows.Count + 1)));
                     }
                 }
             }
