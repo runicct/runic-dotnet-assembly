@@ -208,8 +208,15 @@ namespace Runic.Dotnet
 
                 return (uint)(((uint)firstByte << 24) | ((uint)secondByte << 16) | ((uint)thirdByte << 8) | ((uint)forthByte));
             }
-
-            static internal void EncodeType(MetadataTable.ITypeDefOrRefOrSpec type, List<byte> signature)
+            public abstract class Encoder
+            {
+                public abstract uint EncodeType(MetadataTable.ITypeDefOrRefOrSpec type);
+            }
+#if NET6_0_OR_GREATER
+            static internal void EncodeType(Encoder? encoder, MetadataTable.ITypeDefOrRefOrSpec type, List<byte> signature)
+#else
+            static internal void EncodeType(Encoder encoder, MetadataTable.ITypeDefOrRefOrSpec type, List<byte> signature)
+#endif
             {
                 switch (type)
                 {
@@ -233,13 +240,13 @@ namespace Runic.Dotnet
                     case PrimitiveType.Pointer pointer:
                         {
                             signature.Add(0x0F);
-                            EncodeType(pointer.Target, signature);
+                            EncodeType(encoder, pointer.Target, signature);
                             break;
                         }
                     case PrimitiveType.Ref @ref:
                         {
                             signature.Add(0x10);
-                            EncodeType(@ref.Target, signature);
+                            EncodeType(encoder, @ref.Target, signature);
                             break;
                         }
                     case PrimitiveType.GenericTypeInType genericTypeInType:
@@ -253,13 +260,13 @@ namespace Runic.Dotnet
                             if (array.Rank == 1 && array.LowerBounds.Length == 0 && array.Sizes.Length == 0)
                             {
                                 signature.Add(0x1D);
-                                EncodeType(array.ElementType, signature);
+                                EncodeType(encoder, array.ElementType, signature);
                                 break;
                             }
                             else
                             {
                                 signature.Add(0x14);
-                                EncodeType(array.ElementType, signature);
+                                EncodeType(encoder, array.ElementType, signature);
                                 EncodeCompressedInteger(array.Rank, signature);
                                 EncodeCompressedInteger((uint)array.Sizes.Length, signature);
                                 for (int i = 0; i < array.Sizes.Length; i++)
@@ -311,6 +318,21 @@ namespace Runic.Dotnet
                             EncodeCompressedInteger((typeRef.Row << 2) | 0x01, signature);
                             break;
                         }
+                    default:
+                        if (encoder != null)
+                        {
+                            uint token = encoder.EncodeType(type);
+                            signature.Add(0x12);
+                            if ((token & 0xFF000000) == 0x02000000) { token = (token & 0x00FFFFFF) << 2 | 0x00; }
+                            else if ((token & 0xFF000000) == 0x01000000) { token = (token & 0x00FFFFFF) << 2 | 0x01; }
+                            else { throw new ArgumentException("Unsupported token type returned by encoder."); }
+                            EncodeCompressedInteger(token, signature);
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Unsupported type and no encoder provided");
+                        }
+                        break;
                 }
             }
 #if NET6_0_OR_GREATER
@@ -364,14 +386,73 @@ namespace Runic.Dotnet
                         throw new ArgumentException("Invalid type signature");
                 }
             }
-
-            public static byte[] EncodeFieldSignature(MetadataTable.ITypeDefOrRefOrSpec type)
+            public abstract class Decoder
+            {
+                public abstract MetadataTable.ITypeDefOrRefOrSpec DecodeType(uint row);
+            }
+            static internal MetadataTable.ITypeDefOrRefOrSpec DecodeType(Decoder decoder, byte[] signature, ref uint offset)
+            {
+                switch (signature[offset])
+                {
+                    case 0x01: offset += 1; return PrimitiveType.Void;
+                    case 0x02: offset += 1; return PrimitiveType.Bool;
+                    case 0x03: offset += 1; return PrimitiveType.Char;
+                    case 0x04: offset += 1; return PrimitiveType.SByte;
+                    case 0x05: offset += 1; return PrimitiveType.Byte;
+                    case 0x06: offset += 1; return PrimitiveType.Short;
+                    case 0x07: offset += 1; return PrimitiveType.UShort;
+                    case 0x08: offset += 1; return PrimitiveType.Int;
+                    case 0x09: offset += 1; return PrimitiveType.UInt;
+                    case 0x0A: offset += 1; return PrimitiveType.Long;
+                    case 0x0B: offset += 1; return PrimitiveType.ULong;
+                    case 0x0C: offset += 1; return PrimitiveType.Float;
+                    case 0x0D: offset += 1; return PrimitiveType.Double;
+                    case 0x0E: offset += 1; return PrimitiveType.String;
+                    case 0x0F: offset += 1; return new PrimitiveType.Pointer(DecodeType(decoder, signature, ref offset));
+                    case 0x10: offset += 1; return new PrimitiveType.Ref(DecodeType(decoder, signature, ref offset));
+                    case 0x15: offset += 1; return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
+                    case 0x1E: offset += 1; return new PrimitiveType.GenericTypeInMethod(ReadCompressedInteger(signature, ref offset));
+                    case 0x18: offset += 1; return PrimitiveType.Nint;
+                    case 0x19: offset += 1; return PrimitiveType.Nuint;
+                    case 0x1C: offset += 1; return PrimitiveType.Object;
+                    case 0x1D: offset += 1; return new PrimitiveType.Array(DecodeType(decoder, signature, ref offset), 1, new uint[0], new uint[0]);
+                    case 0x11:
+                        {
+                            uint token = ReadCompressedInteger(signature, ref offset);
+                            uint decodedIndex = token >> 2;
+                            if ((token & 0x03) == 0x00) return new PrimitiveType.ValueType(decoder.DecodeType(decodedIndex | 0x02000000));
+                            else if ((token & 0x03) == 0x01) return new PrimitiveType.ValueType(decoder.DecodeType(decodedIndex | 0x01000000));
+                            else throw new ArgumentException("Invalid token for ValueType.");
+                        }
+                    case 0x12:
+                        {
+                            uint token = ReadCompressedInteger(signature, ref offset);
+                            uint decodedIndex = token >> 2;
+                            if ((token & 0x03) == 0x00) return decoder.DecodeType(decodedIndex | 0x02000000);
+                            else if ((token & 0x03) == 0x01) return decoder.DecodeType(decodedIndex | 0x01000000);
+                            else throw new ArgumentException("Invalid token for TypeDefOrRef.");
+                        }
+                    case 0x41: offset += 1; return new PrimitiveType._Sentinel();
+                    default:
+                        throw new ArgumentException("Invalid type signature");
+                }
+            }
+#if NET6_0_OR_GREATER
+            public static byte[] EncodeFieldSignature(Encoder? encoder, MetadataTable.ITypeDefOrRefOrSpec type)
+#else
+            public static byte[] EncodeFieldSignature(Encoder encoder, MetadataTable.ITypeDefOrRefOrSpec type)
+#endif
             {
                 var signature = new List<byte>();
                 signature.Add(0x06);
-                Assembly.Signature.EncodeType(type, signature);
+                Assembly.Signature.EncodeType(encoder, type, signature);
                 return signature.ToArray();
             }
+            public static byte[] EncodeFieldSignature(MetadataTable.ITypeDefOrRefOrSpec type)
+            {
+                return EncodeFieldSignature(null, type);
+            }
+ 
 #if NET6_0_OR_GREATER
             public static MetadataTable.ITypeDefOrRefOrSpec DecodeFieldSignature(MetadataTable.TypeDefTable? typeDefTable, MetadataTable.TypeRefTable? typeRefTable, byte[] signature, ref uint offset)
 #else
@@ -381,6 +462,12 @@ namespace Runic.Dotnet
                 if (signature[offset] != 0x06) { throw new ArgumentException("Invalid field signature"); }
                 offset++;
                 return Assembly.Signature.DecodeType(typeDefTable, typeRefTable, signature, ref offset);
+            }
+            public static MetadataTable.ITypeDefOrRefOrSpec DecodeFieldSignature(Decoder decoder, byte[] signature, ref uint offset)
+            {
+                if (signature[offset] != 0x06) { throw new ArgumentException("Invalid field signature"); }
+                offset++;
+                return Assembly.Signature.DecodeType(decoder, signature, ref offset);
             }
 #if NET6_0_OR_GREATER
             public static void DecodeMethodSignature(MetadataTable.TypeDefTable? typeDefTable, MetadataTable.TypeRefTable? typeRefTable, byte[] signature, ref uint offset, out MetadataTable.ITypeDefOrRefOrSpec returnType, out bool hasThis, out bool explicitThis, out bool vaargs, out uint genericParameterCount, out MetadataTable.ITypeDefOrRefOrSpec[] parameters)
@@ -401,7 +488,26 @@ namespace Runic.Dotnet
                     parameters[n] = DecodeType(typeDefTable, typeRefTable, signature, ref offset);
                 }
             }
-            public static byte[] EncodeMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, uint genericParameterCount, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            public static void DecodeMethodSignature(Decoder decoder, byte[] signature, ref uint offset, out MetadataTable.ITypeDefOrRefOrSpec returnType, out bool hasThis, out bool explicitThis, out bool vaargs, out uint genericParameterCount, out MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            {
+                byte flags = signature[offset]; offset++;
+                hasThis = (flags & 0x20) != 0;
+                explicitThis = (flags & 0x40) != 0;
+                vaargs = (flags & 0x05) != 0;
+                genericParameterCount = (flags & 0x10) != 0 ? ReadCompressedInteger(signature, ref offset) : 0;
+                uint parameterCount = ReadCompressedInteger(signature, ref offset);
+                returnType = DecodeType(decoder, signature, ref offset);
+                parameters = new MetadataTable.ITypeDefOrRefOrSpec[parameterCount];
+                for (int n = 0; n < parameterCount; n++)
+                {
+                    parameters[n] = DecodeType(decoder, signature, ref offset);
+                }
+            }
+#if NET6_0_OR_GREATER
+            public static byte[] EncodeMethodSignature(Encoder? encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, uint genericParameterCount, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+#else
+            public static byte[] EncodeMethodSignature(Encoder encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, uint genericParameterCount, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+#endif
             {
                 var signature = new List<byte>();
                 uint flags = 0;
@@ -414,14 +520,22 @@ namespace Runic.Dotnet
                     EncodeCompressedInteger(genericParameterCount, signature);
                 }
                 EncodeCompressedInteger((uint)parameters.Length, signature);
-                EncodeType(returnType, signature);
+                EncodeType(encoder, returnType, signature);
                 for (int n = 0; n < parameters.Length; n++)
                 {
-                    EncodeType(parameters[n], signature);
+                    EncodeType(encoder, parameters[n], signature);
                 }
                 return signature.ToArray();
             }
-            public static byte[] EncodeMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, bool vaargs, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            public static byte[] EncodeMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, uint genericParameterCount, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            {
+                return EncodeMethodSignature(null, returnType, hasThis, explicitThis, genericParameterCount, parameters);
+            }
+#if NET6_0_OR_GREATER
+            public static byte[] EncodeMethodSignature(Encoder? encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, bool vaargs, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+#else
+            public static byte[] EncodeMethodSignature(Encoder encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, bool vaargs, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+#endif
             {
                 var signature = new List<byte>();
                 uint flags = 0;
@@ -430,12 +544,16 @@ namespace Runic.Dotnet
                 if (vaargs) { flags |= 0x05; }
                 signature.Add((byte)flags);
                 EncodeCompressedInteger((uint)parameters.Length, signature);
-                EncodeType(returnType, signature);
+                EncodeType(encoder, returnType, signature);
                 for (int n = 0; n < parameters.Length; n++)
                 {
-                    EncodeType(parameters[n], signature);
+                    EncodeType(encoder, parameters[n], signature);
                 }
                 return signature.ToArray();
+            }
+            public static byte[] EncodeMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, bool vaargs, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            {
+                return EncodeMethodSignature(null, returnType, hasThis, explicitThis, vaargs, parameters);
             }
 #if NET6_0_OR_GREATER
             public static void DecodeStandaloneMethodSignature(MetadataTable.TypeDefTable? typeDefTable, MetadataTable.TypeRefTable? typeRefTable, byte[] signature, ref uint offset, out MetadataTable.ITypeDefOrRefOrSpec returnType, out bool hasThis, out bool explicitThis, out CallingConvention callingConvention, out MetadataTable.ITypeDefOrRefOrSpec[] parameters, out MetadataTable.ITypeDefOrRefOrSpec[] extraParameters)
@@ -472,9 +590,9 @@ namespace Runic.Dotnet
                 extraParameters = vaargsParameters.ToArray();
             }
 #if NET6_0_OR_GREATER
-            public static byte[] EncodeStandaloneMethodSignature(MetadataTable.TypeDefTable? typeDefTable, MetadataTable.TypeRefTable? typeRefTable, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, MetadataTable.ITypeDefOrRefOrSpec[] parameters, MetadataTable.ITypeDefOrRefOrSpec[] extraParameters)
+            public static byte[] EncodeStandaloneMethodSignature(Encoder? encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, MetadataTable.ITypeDefOrRefOrSpec[] parameters, MetadataTable.ITypeDefOrRefOrSpec[] extraParameters)
 #else
-            public static byte[] EncodeStandaloneMethodSignature(MetadataTable.TypeDefTable typeDefTable, MetadataTable.TypeRefTable typeRefTable, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, MetadataTable.ITypeDefOrRefOrSpec[] parameters, MetadataTable.ITypeDefOrRefOrSpec[] extraParameters)
+            public static byte[] EncodeStandaloneMethodSignature(Encoder encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, MetadataTable.ITypeDefOrRefOrSpec[] parameters, MetadataTable.ITypeDefOrRefOrSpec[] extraParameters)
 #endif
             {
                 List<byte> signature = new List<byte>();
@@ -483,23 +601,33 @@ namespace Runic.Dotnet
                 if (explicitThis) { flags |= 0x40; }
                 flags |= (byte)(CallingConvention.VarArgs);
                 signature.Add(flags);
-                EncodeType(returnType, signature);
+                EncodeType(encoder, returnType, signature);
                 EncodeCompressedInteger((uint)(parameters.Length + extraParameters.Length), signature);
                 for (int n = 0; n < parameters.Length; n++)
                 {
-                    EncodeType(parameters[n], signature);
+                    EncodeType(encoder, parameters[n], signature);
                 }
                 signature.Add(0x41); // Sentinel
                 for (int n = 0; n < extraParameters.Length; n++)
                 {
-                    EncodeType(extraParameters[n], signature);
+                    EncodeType(encoder, extraParameters[n], signature);
                 }
                 return signature.ToArray();
             }
+
 #if NET6_0_OR_GREATER
-            public static byte[] EncodeStandaloneMethodSignature   (MetadataTable.TypeDefTable? typeDefTable, MetadataTable.TypeRefTable? typeRefTable, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            public static byte[] EncodeStandaloneMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, MetadataTable.ITypeDefOrRefOrSpec[] parameters, MetadataTable.ITypeDefOrRefOrSpec[] extraParameters)
 #else
-            public static byte[] EncodeStandaloneMethodSignature(MetadataTable.TypeDefTable typeDefTable, MetadataTable.TypeRefTable typeRefTable, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+            public static byte[] EncodeStandaloneMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, MetadataTable.ITypeDefOrRefOrSpec[] parameters, MetadataTable.ITypeDefOrRefOrSpec[] extraParameters)
+#endif
+            {
+                return EncodeStandaloneMethodSignature(null, returnType, hasThis, explicitThis, parameters, extraParameters);
+            }
+
+#if NET6_0_OR_GREATER
+            public static byte[] EncodeStandaloneMethodSignature(Encoder? encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+#else
+            public static byte[] EncodeStandaloneMethodSignature(Encoder encoder, MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
 #endif
             {
                 List<byte> signature = new List<byte>();
@@ -508,14 +636,23 @@ namespace Runic.Dotnet
                 if (explicitThis) { flags |= 0x40; }
                 flags |= (byte)(callingConvention);
                 signature.Add(flags);
-                EncodeType(returnType, signature);
+                EncodeType(encoder, returnType, signature);
                 EncodeCompressedInteger((uint)parameters.Length, signature);
                 for (int n = 0; n < parameters.Length; n++)
                 {
-                    EncodeType(parameters[n], signature);
+                    EncodeType(encoder, parameters[n], signature);
                 }
                 return signature.ToArray();
             }
+#if NET6_0_OR_GREATER
+            public static byte[] EncodeStandaloneMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+#else
+        public static byte[] EncodeStandaloneMethodSignature(MetadataTable.ITypeDefOrRefOrSpec returnType, bool hasThis, bool explicitThis, CallingConvention callingConvention, MetadataTable.ITypeDefOrRefOrSpec[] parameters)
+#endif
+            {
+                return EncodeStandaloneMethodSignature(null, returnType, hasThis, explicitThis, callingConvention, parameters);
+            }
         }
+
     }
 }
