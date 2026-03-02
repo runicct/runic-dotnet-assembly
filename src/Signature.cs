@@ -28,6 +28,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Runic.Dotnet.Assembly;
+using static Runic.Dotnet.Assembly.Signature.PrimitiveType;
 
 namespace Runic.Dotnet
 {
@@ -140,6 +141,18 @@ namespace Runic.Dotnet
                         }
                     }
                 }
+                public class GenericTypeInstantiation : MetadataTable.ITypeDefOrRefOrSpec
+                {
+                    MetadataTable.ITypeDefOrRefOrSpec _type;
+                    internal MetadataTable.ITypeDefOrRefOrSpec Type { get { return _type; } }
+                    MetadataTable.ITypeDefOrRefOrSpec[] _arguments;
+                    internal MetadataTable.ITypeDefOrRefOrSpec[] Arguments { get { return _arguments; } }
+                    public GenericTypeInstantiation(MetadataTable.ITypeDefOrRefOrSpec type, MetadataTable.ITypeDefOrRefOrSpec[] arguments)
+                    {
+                        _type = type;
+                        _arguments = arguments;
+                    }
+                }
                 public class GenericTypeInType : MetadataTable.ITypeDefOrRefOrSpec
                 {
                     uint _index;
@@ -249,9 +262,20 @@ namespace Runic.Dotnet
                             EncodeType(encoder, @ref.Target, signature);
                             break;
                         }
-                    case PrimitiveType.GenericTypeInType genericTypeInType:
+                    case PrimitiveType.GenericTypeInstantiation genericTypeInstantiation:
                         {
                             signature.Add(0x15);
+                            EncodeType(encoder, genericTypeInstantiation.Type, signature);
+                            EncodeCompressedInteger((uint)genericTypeInstantiation.Arguments.Length, signature);
+                            for (int n = 0; n < genericTypeInstantiation.Arguments.Length; n++)
+                            {
+                                EncodeType(encoder, genericTypeInstantiation.Arguments[n], signature);
+                            }
+                            break;
+                        }
+                    case PrimitiveType.GenericTypeInType genericTypeInType:
+                        {
+                            signature.Add(0x13);
                             EncodeCompressedInteger(genericTypeInType.Index, signature);
                             break;
                         }
@@ -359,8 +383,19 @@ namespace Runic.Dotnet
                     case 0x0E: offset += 1; return PrimitiveType.String;
                     case 0x0F: offset += 1; return new PrimitiveType.Pointer(DecodeType(typeDefTable, typeRefTable, signature, ref offset));
                     case 0x10: offset += 1; return new PrimitiveType.Ref(DecodeType(typeDefTable, typeRefTable, signature, ref offset));
-                    case 0x15: offset += 1; return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
+                    case 0x13: offset += 1; return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
                     case 0x1E: offset += 1; return new PrimitiveType.GenericTypeInMethod(ReadCompressedInteger(signature, ref offset));
+                    case 0x15: offset += 1;
+                        {
+                            MetadataTable.ITypeDefOrRefOrSpec type = DecodeType(typeDefTable, typeRefTable, signature, ref offset);
+                            uint argCount = ReadCompressedInteger(signature, ref offset);
+                            MetadataTable.ITypeDefOrRefOrSpec[] args = new MetadataTable.ITypeDefOrRefOrSpec[argCount];
+                            for (uint n = 0; n < argCount; n++)
+                            {
+                                args[n] = DecodeType(typeDefTable, typeRefTable, signature, ref offset);
+                            }
+                            return new GenericTypeInstantiation(type, args);
+                        }
                     case 0x18: offset += 1; return PrimitiveType.Nint;
                     case 0x19: offset += 1; return PrimitiveType.Nuint;
                     case 0x1C: offset += 1; return PrimitiveType.Object;
@@ -410,8 +445,20 @@ namespace Runic.Dotnet
                     case 0x0E: offset += 1; return PrimitiveType.String;
                     case 0x0F: offset += 1; return new PrimitiveType.Pointer(DecodeType(decoder, signature, ref offset));
                     case 0x10: offset += 1; return new PrimitiveType.Ref(DecodeType(decoder, signature, ref offset));
-                    case 0x15: offset += 1; return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
+                    case 0x13: offset += 1; return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
                     case 0x1E: offset += 1; return new PrimitiveType.GenericTypeInMethod(ReadCompressedInteger(signature, ref offset));
+                    case 0x15:
+                        offset += 1;
+                        {
+                            MetadataTable.ITypeDefOrRefOrSpec type = DecodeType(decoder, signature, ref offset);
+                            uint argCount = ReadCompressedInteger(signature, ref offset);
+                            MetadataTable.ITypeDefOrRefOrSpec[] args = new MetadataTable.ITypeDefOrRefOrSpec[argCount];
+                            for (uint n = 0; n < argCount; n++)
+                            {
+                                args[n] = DecodeType(decoder, signature, ref offset);
+                            }
+                            return new GenericTypeInstantiation(type, args);
+                        }
                     case 0x18: offset += 1; return PrimitiveType.Nint;
                     case 0x19: offset += 1; return PrimitiveType.Nuint;
                     case 0x1C: offset += 1; return PrimitiveType.Object;
