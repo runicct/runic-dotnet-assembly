@@ -365,27 +365,29 @@ namespace Runic.Dotnet
             static internal MetadataTable.ITypeDefOrRefOrSpec DecodeType(MetadataTable.TypeDefTable typeDefTable, MetadataTable.TypeRefTable typeRefTable, byte[] signature, ref uint offset)
 #endif
             {
-                switch (signature[offset])
+                byte firstByte = signature[offset];
+                offset++;
+                switch (firstByte)
                 {
-                    case 0x01: offset += 1; return PrimitiveType.Void;
-                    case 0x02: offset += 1; return PrimitiveType.Bool;
-                    case 0x03: offset += 1; return PrimitiveType.Char;
-                    case 0x04: offset += 1; return PrimitiveType.SByte;
-                    case 0x05: offset += 1; return PrimitiveType.Byte;
-                    case 0x06: offset += 1; return PrimitiveType.Short;
-                    case 0x07: offset += 1; return PrimitiveType.UShort;
-                    case 0x08: offset += 1; return PrimitiveType.Int;
-                    case 0x09: offset += 1; return PrimitiveType.UInt;
-                    case 0x0A: offset += 1; return PrimitiveType.Long;
-                    case 0x0B: offset += 1; return PrimitiveType.ULong;
-                    case 0x0C: offset += 1; return PrimitiveType.Float;
-                    case 0x0D: offset += 1; return PrimitiveType.Double;
-                    case 0x0E: offset += 1; return PrimitiveType.String;
-                    case 0x0F: offset += 1; return new PrimitiveType.Pointer(DecodeType(typeDefTable, typeRefTable, signature, ref offset));
-                    case 0x10: offset += 1; return new PrimitiveType.Ref(DecodeType(typeDefTable, typeRefTable, signature, ref offset));
-                    case 0x13: offset += 1; return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
-                    case 0x1E: offset += 1; return new PrimitiveType.GenericTypeInMethod(ReadCompressedInteger(signature, ref offset));
-                    case 0x15: offset += 1;
+                    case 0x01: return PrimitiveType.Void;
+                    case 0x02: return PrimitiveType.Bool;
+                    case 0x03: return PrimitiveType.Char;
+                    case 0x04: return PrimitiveType.SByte;
+                    case 0x05: return PrimitiveType.Byte;
+                    case 0x06: return PrimitiveType.Short;
+                    case 0x07: return PrimitiveType.UShort;
+                    case 0x08: return PrimitiveType.Int;
+                    case 0x09: return PrimitiveType.UInt;
+                    case 0x0A: return PrimitiveType.Long;
+                    case 0x0B: return PrimitiveType.ULong;
+                    case 0x0C: return PrimitiveType.Float;
+                    case 0x0D: return PrimitiveType.Double;
+                    case 0x0E: return PrimitiveType.String;
+                    case 0x0F: return new PrimitiveType.Pointer(DecodeType(typeDefTable, typeRefTable, signature, ref offset));
+                    case 0x10: return new PrimitiveType.Ref(DecodeType(typeDefTable, typeRefTable, signature, ref offset));
+                    case 0x13: return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
+                    case 0x1E: return new PrimitiveType.GenericTypeInMethod(ReadCompressedInteger(signature, ref offset));
+                    case 0x15:
                         {
                             MetadataTable.ITypeDefOrRefOrSpec type = DecodeType(typeDefTable, typeRefTable, signature, ref offset);
                             uint argCount = ReadCompressedInteger(signature, ref offset);
@@ -396,10 +398,10 @@ namespace Runic.Dotnet
                             }
                             return new GenericTypeInstantiation(type, args);
                         }
-                    case 0x18: offset += 1; return PrimitiveType.Nint;
-                    case 0x19: offset += 1; return PrimitiveType.Nuint;
-                    case 0x1C: offset += 1; return PrimitiveType.Object;
-                    case 0x1D: offset += 1; return new PrimitiveType.Array(DecodeType(typeDefTable, typeRefTable, signature, ref offset), 1, new uint[0], new uint[0]);
+                    case 0x18: return PrimitiveType.Nint;
+                    case 0x19: return PrimitiveType.Nuint;
+                    case 0x1C: return PrimitiveType.Object;
+                    case 0x1D: return new PrimitiveType.Array(DecodeType(typeDefTable, typeRefTable, signature, ref offset), 1, new uint[0], new uint[0]);
                     case 0x11:
                         {
                             uint token = ReadCompressedInteger(signature, ref offset);
@@ -416,7 +418,7 @@ namespace Runic.Dotnet
                             else if ((token & 0x03) == 0x01) return typeRefTable[decodedIndex];
                             else throw new ArgumentException("Invalid token for TypeDefOrRef.");
                         }
-                    case 0x41: offset += 1; return new PrimitiveType._Sentinel();
+                    case 0x41: return new PrimitiveType._Sentinel();
                     default:
                         throw new ArgumentException("Invalid type signature");
                 }
@@ -427,28 +429,29 @@ namespace Runic.Dotnet
             }
             static internal MetadataTable.ITypeDefOrRefOrSpec DecodeType(Decoder decoder, byte[] signature, ref uint offset)
             {
-                switch (signature[offset])
+                byte firstByte = signature[offset];
+                offset++;
+                switch (firstByte)
                 {
-                    case 0x01: offset += 1; return PrimitiveType.Void;
-                    case 0x02: offset += 1; return PrimitiveType.Bool;
-                    case 0x03: offset += 1; return PrimitiveType.Char;
-                    case 0x04: offset += 1; return PrimitiveType.SByte;
-                    case 0x05: offset += 1; return PrimitiveType.Byte;
-                    case 0x06: offset += 1; return PrimitiveType.Short;
-                    case 0x07: offset += 1; return PrimitiveType.UShort;
-                    case 0x08: offset += 1; return PrimitiveType.Int;
-                    case 0x09: offset += 1; return PrimitiveType.UInt;
-                    case 0x0A: offset += 1; return PrimitiveType.Long;
-                    case 0x0B: offset += 1; return PrimitiveType.ULong;
-                    case 0x0C: offset += 1; return PrimitiveType.Float;
-                    case 0x0D: offset += 1; return PrimitiveType.Double;
-                    case 0x0E: offset += 1; return PrimitiveType.String;
-                    case 0x0F: offset += 1; return new PrimitiveType.Pointer(DecodeType(decoder, signature, ref offset));
-                    case 0x10: offset += 1; return new PrimitiveType.Ref(DecodeType(decoder, signature, ref offset));
-                    case 0x13: offset += 1; return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
-                    case 0x1E: offset += 1; return new PrimitiveType.GenericTypeInMethod(ReadCompressedInteger(signature, ref offset));
+                    case 0x01: return PrimitiveType.Void;
+                    case 0x02: return PrimitiveType.Bool;
+                    case 0x03: return PrimitiveType.Char;
+                    case 0x04: return PrimitiveType.SByte;
+                    case 0x05: return PrimitiveType.Byte;
+                    case 0x06: return PrimitiveType.Short;
+                    case 0x07: return PrimitiveType.UShort;
+                    case 0x08: return PrimitiveType.Int;
+                    case 0x09: return PrimitiveType.UInt;
+                    case 0x0A: return PrimitiveType.Long;
+                    case 0x0B: return PrimitiveType.ULong;
+                    case 0x0C: return PrimitiveType.Float;
+                    case 0x0D: return PrimitiveType.Double;
+                    case 0x0E: return PrimitiveType.String;
+                    case 0x0F: return new PrimitiveType.Pointer(DecodeType(decoder, signature, ref offset));
+                    case 0x10: return new PrimitiveType.Ref(DecodeType(decoder, signature, ref offset));
+                    case 0x13: return new PrimitiveType.GenericTypeInType(ReadCompressedInteger(signature, ref offset));
+                    case 0x1E: return new PrimitiveType.GenericTypeInMethod(ReadCompressedInteger(signature, ref offset));
                     case 0x15:
-                        offset += 1;
                         {
                             MetadataTable.ITypeDefOrRefOrSpec type = DecodeType(decoder, signature, ref offset);
                             uint argCount = ReadCompressedInteger(signature, ref offset);
@@ -459,12 +462,11 @@ namespace Runic.Dotnet
                             }
                             return new GenericTypeInstantiation(type, args);
                         }
-                    case 0x18: offset += 1; return PrimitiveType.Nint;
-                    case 0x19: offset += 1; return PrimitiveType.Nuint;
-                    case 0x1C: offset += 1; return PrimitiveType.Object;
-                    case 0x1D: offset += 1; return new PrimitiveType.Array(DecodeType(decoder, signature, ref offset), 1, new uint[0], new uint[0]);
+                    case 0x18: return PrimitiveType.Nint;
+                    case 0x19: return PrimitiveType.Nuint;
+                    case 0x1C: return PrimitiveType.Object;
+                    case 0x1D: return new PrimitiveType.Array(DecodeType(decoder, signature, ref offset), 1, new uint[0], new uint[0]);
                     case 0x11:
-                        offset += 1;
                         {
                             uint token = ReadCompressedInteger(signature, ref offset);
                             uint decodedIndex = token >> 2;
@@ -473,7 +475,6 @@ namespace Runic.Dotnet
                             else throw new ArgumentException("Invalid token for ValueType.");
                         }
                     case 0x12:
-                        offset += 1;
                         {
                             uint token = ReadCompressedInteger(signature, ref offset);
                             uint decodedIndex = token >> 2;
@@ -481,7 +482,7 @@ namespace Runic.Dotnet
                             else if ((token & 0x03) == 0x01) return decoder.DecodeType(decodedIndex | 0x01000000);
                             else throw new ArgumentException("Invalid token for TypeDefOrRef.");
                         }
-                    case 0x41: offset += 1; return new PrimitiveType._Sentinel();
+                    case 0x41: return new PrimitiveType._Sentinel();
                     default:
                         throw new ArgumentException("Invalid type signature");
                 }
