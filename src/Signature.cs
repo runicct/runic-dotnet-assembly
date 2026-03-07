@@ -464,6 +464,7 @@ namespace Runic.Dotnet
                     case 0x1C: offset += 1; return PrimitiveType.Object;
                     case 0x1D: offset += 1; return new PrimitiveType.Array(DecodeType(decoder, signature, ref offset), 1, new uint[0], new uint[0]);
                     case 0x11:
+                        offset += 1;
                         {
                             uint token = ReadCompressedInteger(signature, ref offset);
                             uint decodedIndex = token >> 2;
@@ -472,6 +473,7 @@ namespace Runic.Dotnet
                             else throw new ArgumentException("Invalid token for ValueType.");
                         }
                     case 0x12:
+                        offset += 1;
                         {
                             uint token = ReadCompressedInteger(signature, ref offset);
                             uint decodedIndex = token >> 2;
