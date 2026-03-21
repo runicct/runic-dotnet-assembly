@@ -121,7 +121,8 @@ namespace Runic.Dotnet
                         uint blobIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         if (paramTable != null)
                         {
-                            _parameterList = paramTable[(paramTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16())];
+                            uint paramIndex = (paramTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16());
+                            if (paramIndex == 0 || (paramIndex + 1) >= paramTable.Rows) { _parameterList = null; } else { _parameterList = paramTable[paramIndex]; }
                         }
                         else
                         {

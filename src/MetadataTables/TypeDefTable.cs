@@ -149,9 +149,9 @@ namespace Runic.Dotnet
                             _parentType = TypeDefOrRefOrSpecDecode(typeDefOrTypeRefTag, _parent, typeRefTable, typeSpecTable);
                         }
                         uint fieldList = fieldTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _fieldList =  fieldTable[fieldList];
+                        if (fieldList == 0 || (fieldList - 1) >= fieldTable.Rows) { _fieldList = null; } else { _fieldList = fieldTable[fieldList]; }
                         uint methodList = methodDef.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _methodList = methodDef[methodList];
+                        if (methodList == 0 || (methodList - 1) >= methodDef.Rows) { _methodList = null; } else { _methodList = methodDef[methodList]; }
                         if (nameIndex == 0) { _name = null; } else { _name = new Heap.StringHeap.String(stringHeap, nameIndex); }
                         if (namespaceIndex == 0) { _namespace = null; } else { _namespace = new Heap.StringHeap.String(stringHeap, namespaceIndex); }
                     }
