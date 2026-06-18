@@ -58,6 +58,7 @@ namespace Runic.Dotnet
                 }
                 public GUIDHeap(bool largeIndices, uint relativeVirtualAddress, uint size) : base(relativeVirtualAddress, size)
                 {
+                    _largeIndices = largeIndices;
                 }
             }
         }

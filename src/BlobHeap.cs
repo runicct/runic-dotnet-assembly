@@ -58,6 +58,7 @@ namespace Runic.Dotnet
                 }
                 public BlobHeap(bool largeIndices, uint relativeVirtualAddress, uint size) : base(relativeVirtualAddress, size)
                 {
+                    _largeIndices = largeIndices;
                 }
             }
         }
