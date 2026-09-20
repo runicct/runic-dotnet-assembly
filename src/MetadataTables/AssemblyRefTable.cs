@@ -38,7 +38,7 @@ namespace Runic.Dotnet
             public class AssemblyRefTable : MetadataTable
             {
                 List<AssemblyRefTableRow> _rows = new List<AssemblyRefTableRow>();
-                public class AssemblyRefTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute, IImplementation
+                public class AssemblyRefTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute, IImplementation, IHasCustomDebugInformation
                 {
                     AssemblyRefTable _parent;
                     public AssemblyRefTable Parent { get { return _parent; } }

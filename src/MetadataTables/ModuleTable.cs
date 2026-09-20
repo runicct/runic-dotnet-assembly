@@ -37,7 +37,7 @@ namespace Runic.Dotnet
         {
             public class ModuleTable : MetadataTable
             {
-                public class ModuleTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute
+                public class ModuleTableRow : MetadataTableRow, IResolutionScope, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     ModuleTable _parent;
                     public ModuleTable Parent { get { return _parent; } }

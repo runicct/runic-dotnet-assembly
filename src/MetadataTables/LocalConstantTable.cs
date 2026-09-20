@@ -34,7 +34,7 @@ namespace Runic.Dotnet
             public class LocalConstantTable : MetadataTable
             {
                 List<LocalConstantTableRow> _rows = new List<LocalConstantTableRow>();
-                public class LocalConstantTableRow : MetadataTableRow
+                public class LocalConstantTableRow : MetadataTableRow, IHasCustomDebugInformation
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }

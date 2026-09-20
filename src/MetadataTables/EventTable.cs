@@ -52,7 +52,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class EventTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics
+                public class EventTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics, IHasCustomDebugInformation
                 {
                     EventTable _parent;
                     public EventTable Parent { get { return _parent; } }

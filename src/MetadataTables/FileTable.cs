@@ -55,7 +55,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class FileTableRow : MetadataTableRow, IHasCustomAttribute, IImplementation
+                public class FileTableRow : MetadataTableRow, IHasCustomAttribute, IImplementation, IHasCustomDebugInformation
                 {
                     FileTable _parent;
                     public FileTable Parent { get { return _parent; } }

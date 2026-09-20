@@ -43,7 +43,7 @@ namespace Runic.Dotnet
                 public override uint Rows { get { return (uint)_rows.Count; } }
                 public override bool Sorted { get { return false; } }
                 public DeclSecurityTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class DeclSecurityTableRow : MetadataTableRow, IHasCustomAttribute
+                public class DeclSecurityTableRow : MetadataTableRow, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     DeclSecurityTable _parent;
                     public DeclSecurityTable Parent { get { return _parent; } }

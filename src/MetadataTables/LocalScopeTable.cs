@@ -33,7 +33,7 @@ namespace Runic.Dotnet
             public class LocalScopeTable : MetadataTable
             {
                 List<LocalScopeTableRow> _rows = new List<LocalScopeTableRow>();
-                public class LocalScopeTableRow : MetadataTableRow
+                public class LocalScopeTableRow : MetadataTableRow, IHasCustomDebugInformation
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }
@@ -60,9 +60,13 @@ namespace Runic.Dotnet
                         _startOffset = startOffset;
                         _length = length;
                     }
-                    internal LocalScopeTableRow(uint row, MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, System.IO.BinaryReader reader)
+                    internal LocalScopeTableRow(uint row)
                     {
                         _row = row;
+                    }
+
+                    internal void Load(MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, System.IO.BinaryReader reader)
+                    {
                         uint methodIndex = methodTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _method = methodTable[methodIndex];
                         uint importScopeIndex = importScopeTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
@@ -75,20 +79,19 @@ namespace Runic.Dotnet
                         _length = reader.ReadUInt32();
                     }
 #if NET6_0_OR_GREATER
-                    internal LocalScopeTableRow(uint row, MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, Span<byte> data, ref uint offset)
+                    internal void Load(MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, Span<byte> data, ref uint offset)
                     {
-                        _row = row;
                         uint methodIndex = 0;
                         if (methodTable.LargeIndices) { methodIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { methodIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _method = methodTable[methodIndex];
                         uint importScopeIndex = 0;
-                        if (importScopeTable.LargeIndices) { importScopeIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { importScopeIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }   
+                        if (importScopeTable.LargeIndices) { importScopeIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { importScopeIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _importScope = importScopeTable[importScopeIndex];
                         uint variableListIndex = 0;
                         if (localVariableTable.LargeIndices) { variableListIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { variableListIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _variableList = localVariableTable[variableListIndex];
                         uint constantListIndex = 0;
-                        if (localConstantTable.LargeIndices) { constantListIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { constantListIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }   
+                        if (localConstantTable.LargeIndices) { constantListIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { constantListIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _constantList = localConstantTable[constantListIndex];
                         _startOffset = BitConverterLE.ToUInt32(data, offset); offset += 4;
                         _length = BitConverterLE.ToUInt32(data, offset); offset += 4;
@@ -128,22 +131,30 @@ namespace Runic.Dotnet
                 public LocalScopeTable() : base()
                 {
                 }
-                internal LocalScopeTable(uint rows, MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, System.IO.BinaryReader reader)
+                internal LocalScopeTable(uint rows)
                 {
                     _rows = new List<LocalScopeTableRow>();
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new LocalScopeTableRow((uint)(n +1), methodTable, importScopeTable, localVariableTable, localConstantTable, reader));
+                        _rows.Add(new LocalScopeTableRow((uint)(n + 1)));
+                    }
+                }
+                internal void Load(MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, System.IO.BinaryReader reader)
+                {
+                    int rows = _rows.Count;
+                    for (int n = 0; n < rows; n++)
+                    {
+                        _rows[n].Load(methodTable, importScopeTable, localVariableTable, localConstantTable, reader);
                     }
                 }
 #if NET6_0_OR_GREATER
 
-                internal LocalScopeTable(uint rows, MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, Span<byte> data, ref uint offset)
+                internal void Load(MethodDefTable methodTable, ImportScopeTable importScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, Span<byte> data, ref uint offset)
                 {
-                    _rows = new List<LocalScopeTableRow>();
+                    int rows = _rows.Count;
                     for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new LocalScopeTableRow((uint)(n + 1), methodTable, importScopeTable, localVariableTable, localConstantTable, data, ref offset));
+                        _rows[n].Load(methodTable, importScopeTable, localVariableTable, localConstantTable, data, ref offset);
                     }
                 }
 #endif

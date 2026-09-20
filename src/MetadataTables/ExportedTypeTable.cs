@@ -60,7 +60,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class ExportedTypeTableRow : MetadataTableRow, IHasCustomAttribute, IImplementation
+                public class ExportedTypeTableRow : MetadataTableRow, IHasCustomAttribute, IImplementation, IHasCustomDebugInformation
                 {
                     ExportedTypeTable _parent;
                     public ExportedTypeTable Parent { get { return _parent; } }

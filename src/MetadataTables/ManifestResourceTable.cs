@@ -56,7 +56,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class ManifestResourceTableRow : MetadataTableRow, IHasCustomAttribute
+                public class ManifestResourceTableRow : MetadataTableRow, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     ManifestResourceTable _parent;
                     public ManifestResourceTable Parent { get { return _parent; } }

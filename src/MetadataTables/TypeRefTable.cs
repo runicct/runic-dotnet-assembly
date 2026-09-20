@@ -39,7 +39,7 @@ namespace Runic.Dotnet
             {
                 List<TypeRefTableRow> _rows = new List<TypeRefTableRow>();
                 public TypeRefTableRow this[uint index] { get { lock (this) { return _rows[(int)(index - 1)]; } } }
-                public class TypeRefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IResolutionScope, IMemberRefParent, IHasCustomAttribute
+                public class TypeRefTableRow : MetadataTableRow, ITypeDefOrRefOrSpec, IResolutionScope, IMemberRefParent, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     TypeRefTable _parent;
                     public TypeRefTable Parent { get { return _parent; } }

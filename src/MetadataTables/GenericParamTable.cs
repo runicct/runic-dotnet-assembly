@@ -55,7 +55,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class GenericParamTableRow : MetadataTableRow, IHasCustomAttribute
+                public class GenericParamTableRow : MetadataTableRow, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     GenericParamTable _parent;
                     public GenericParamTable Parent { get { return _parent; } }

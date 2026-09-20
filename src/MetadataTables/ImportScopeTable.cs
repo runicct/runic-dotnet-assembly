@@ -37,7 +37,7 @@ namespace Runic.Dotnet
         {
             public class ImportScopeTable : MetadataTable
             {
-                public class ImportScopeTableRow : MetadataTableRow
+                public class ImportScopeTableRow : MetadataTableRow, IHasCustomDebugInformation
                 {
                     public override uint Length { get { return 2; } }
                     ImportScopeTable _parent;

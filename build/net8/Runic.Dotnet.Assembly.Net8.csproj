@@ -156,6 +156,12 @@
     <Compile Include="..\..\src\MetadataTables\ImportScopeTable.cs">
       <Link>MetadataTable\ImportScopeTable.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\MetadataTables\StateMachineMethodTable.cs">
+      <Link>MetadataTable\StateMachineMethodTable.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\MetadataTables\CustomDebugInformationTable.cs">
+      <Link>MetadataTable\CustomDebugInformationTable.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\MetadataTables\Tags.cs">
       <Link>MetadataTable\Tags.cs</Link>
     </Compile>

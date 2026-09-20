@@ -55,7 +55,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class InterfaceImplTableRow : MetadataTableRow, IHasCustomAttribute
+                public class InterfaceImplTableRow : MetadataTableRow, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     InterfaceImplTable _parent;
                     public InterfaceImplTable Parent { get { return _parent; } }

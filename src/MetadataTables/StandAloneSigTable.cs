@@ -37,7 +37,7 @@ namespace Runic.Dotnet
         {
             public class StandAloneSigTable : MetadataTable
             {
-                public class StandAloneSigTableRow : MetadataTableRow, IHasCustomAttribute
+                public class StandAloneSigTableRow : MetadataTableRow, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     StandAloneSigTable _parent;
                     public StandAloneSigTable Parent { get { return _parent; } }
@@ -52,18 +52,28 @@ namespace Runic.Dotnet
                         _row = row;
                         _signature = signature;
                     }
-                    internal StandAloneSigTableRow(StandAloneSigTable parent, uint row, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    internal StandAloneSigTableRow(StandAloneSigTable parent, uint row)
                     {
                         _parent = parent;
                         _row = row;
-                        uint signatureIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
                     }
 #if NET6_0_OR_GREATER
                     internal StandAloneSigTableRow(StandAloneSigTable parent, uint row, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                     {
                         _parent = parent;
                         _row = row;
+                        uint signatureIndex = 0; if (blobHeap.LargeIndices) { signatureIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { signatureIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
+                        _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
+                    }
+#endif
+                    internal void Load(Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                    {
+                        uint signatureIndex = blobHeap.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
+                        _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
+                    }
+#if NET6_0_OR_GREATER
+                    internal void Load(Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                    {
                         uint signatureIndex = 0; if (blobHeap.LargeIndices) { signatureIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { signatureIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
                         _signature = new Heap.BlobHeap.Blob(blobHeap, signatureIndex);
                     }
@@ -103,19 +113,28 @@ namespace Runic.Dotnet
                 {
 
                 }
-                internal StandAloneSigTable(uint rows, Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                internal StandAloneSigTable(uint rows)
                 {
                     for (uint n = 0; n < rows; n++)
                     {
-                        _rows.Add(new StandAloneSigTableRow(this, (uint)(n + 1), blobHeap, reader));
+                        _rows.Add(new StandAloneSigTableRow(this, (uint)(n + 1)));
+                    }
+                }
+                internal void Load(Heap.BlobHeap blobHeap, System.IO.BinaryReader reader)
+                {
+                    int rows = _rows.Count;
+                    for (int n = 0; n < rows; n++)
+                    {
+                        _rows[n].Load(blobHeap, reader);
                     }
                 }
 #if NET6_0_OR_GREATER
-                internal StandAloneSigTable(uint rows, Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
+                internal void Load(Heap.BlobHeap blobHeap, Span<byte> data, ref uint offset)
                 {
-                    for (uint n = 0; n < rows; n++)
+                    int rows = _rows.Count;
+                    for (int n = 0; n < rows; n++)
                     {
-                        _rows.Add(new StandAloneSigTableRow(this, (uint)(n + 1), blobHeap, data, ref offset));
+                        _rows[n].Load(blobHeap, data, ref offset);
                     }
                 }
 #endif

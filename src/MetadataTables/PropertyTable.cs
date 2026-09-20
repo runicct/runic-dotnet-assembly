@@ -59,7 +59,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class PropertyTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics, IHasConstant
+                public class PropertyTableRow : MetadataTableRow, IHasCustomAttribute, IHasSemantics, IHasConstant, IHasCustomDebugInformation
                 {
                     PropertyTable _parent;
                     public PropertyTable Parent { get { return _parent; } }

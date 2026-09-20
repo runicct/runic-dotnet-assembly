@@ -37,7 +37,7 @@ namespace Runic.Dotnet
         {
             public class MemberRefTable : MetadataTable
             {
-                public class MemberRefTableRow : MetadataTableRow, ICustomAttributeConstructor, IHasCustomAttribute, IMethodDefOrRef
+                public class MemberRefTableRow : MetadataTableRow, ICustomAttributeConstructor, IHasCustomAttribute, IMethodDefOrRef, IHasCustomDebugInformation
                 {
                     public override uint Length { get { return 3; } }
                     MemberRefTable _parent;

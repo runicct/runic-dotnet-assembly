@@ -55,7 +55,7 @@ namespace Runic.Dotnet
                         return row;
                     }
                 }
-                public class MethodSpecTableRow : MetadataTableRow, IHasCustomAttribute
+                public class MethodSpecTableRow : MetadataTableRow, IHasCustomAttribute, IHasCustomDebugInformation
                 {
                     MethodSpecTable _parent;
                     public MethodSpecTable Parent { get { return _parent; } }

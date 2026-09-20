@@ -34,7 +34,7 @@ namespace Runic.Dotnet
             public class DocumentTable : MetadataTable
             {
                 List<DocumentTableRow> _rows = new List<DocumentTableRow>();
-                public class DocumentTableRow : MetadataTableRow
+                public class DocumentTableRow : MetadataTableRow, IHasCustomDebugInformation
                 {
                     DocumentTable _parent;
                     public DocumentTable Parent { get { return _parent; } }

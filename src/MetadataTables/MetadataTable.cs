@@ -129,6 +129,7 @@ namespace Runic.Dotnet
                 InterfaceImplTable? interfaceImplTable = null;
                 DocumentTable? documentTable = null;
                 ConstantTable? constantTable = null;
+                LocalScopeTable? localScopeTable = null;
                 LocalVariableTable? localVariableTable = null;
                 LocalConstantTable? localConstantTable = null;
                 ImportScopeTable? importScopeTable = null;
@@ -140,6 +141,7 @@ namespace Runic.Dotnet
                 ClassLayoutTable? classLayoutTable = null;
                 FieldMarshalTable? fieldMarshalTable = null;
                 FieldLayoutTable? fieldLayoutTable = null;
+                StandAloneSigTable? standAloneSigTable = null;
                 EventTable? eventTable = null;
                 FileTable? fileTable = null;
                 ExportedTypeTable? exportedTypeTable = null;
@@ -154,6 +156,9 @@ namespace Runic.Dotnet
                 MemberRefTable? memberRefTable = null;
                 AssemblyRefTable? assemblyRefTable = null;
                 AssemblyTable? assemblyTable = null;
+                StateMachineMethodTable? stateMachineMethodTable = null;
+                CustomDebugInformationTable? customDebugInformationTable = null;
+
                 fieldTable = new FieldTable(rows[0x4]);
                 methodDefTable = new MethodDefTable(rows[0x6]);
                 paramTable = new ParamTable(rows[0x8]);
@@ -164,6 +169,7 @@ namespace Runic.Dotnet
                 if ((validTables & (1UL << 0x0E)) != 0) { declSecurityTable = new DeclSecurityTable(rows[0x0E]); }
                 if ((validTables & (1UL << 0x0F)) != 0) { classLayoutTable = new ClassLayoutTable(rows[0x0F]); }
                 if ((validTables & (1UL << 0x10)) != 0) { fieldLayoutTable = new FieldLayoutTable(rows[0x10]); }
+                if ((validTables & (1UL << 0x11)) != 0) { standAloneSigTable= new StandAloneSigTable(rows[0x11]); };
                 if ((validTables & (1UL << 0x14)) != 0) { eventTable = new EventTable(rows[0x14]); }
                 if ((validTables & (1UL << 0x15)) != 0) { propertyMapTable = new PropertyMapTable(rows[0x15]); }
                 if ((validTables & (1UL << 0x17)) != 0) { propertyTable = new PropertyTable(rows[0x17]); }
@@ -179,9 +185,12 @@ namespace Runic.Dotnet
                 if ((validTables & (1UL << 0x2A)) != 0) { genericParamTable = new GenericParamTable(rows[0x2A]); }
                 if ((validTables & (1UL << 0x2B)) != 0) { methodSpecTable = new MethodSpecTable(rows[0x2B]); }
                 if ((validTables & (1UL << 0x2C)) != 0) { genericParamConstraintTable = new GenericParamConstraintTable(rows[0x2C]); }
+                if ((validTables & (1UL << 0x32)) != 0) { localScopeTable = new LocalScopeTable(rows[0x32]); }
                 if ((validTables & (1UL << 0x33)) != 0) { localVariableTable = new LocalVariableTable(rows[0x33]); }
                 if ((validTables & (1UL << 0x34)) != 0) { localConstantTable = new LocalConstantTable(rows[0x34]); }
                 if ((validTables & (1UL << 0x35)) != 0) { importScopeTable = new ImportScopeTable(rows[0x35]); }
+                if ((validTables & (1UL << 0x36)) != 0) { stateMachineMethodTable = new StateMachineMethodTable(rows[0x36]); }
+                if ((validTables & (1UL << 0x37)) != 0) { customDebugInformationTable = new CustomDebugInformationTable(rows[0x37]); }
 
                 for (int n = 0, table = 0; n < 64; n++)
                 {
@@ -203,7 +212,7 @@ namespace Runic.Dotnet
                             case 0x0E: declSecurityTable.Load(blobHeap,typeDefTable, methodDefTable, assemblyTable, data, ref offset); tables[table] = declSecurityTable; break;
                             case 0x0F: classLayoutTable.Load(typeDefTable, data, ref offset); tables[table] = classLayoutTable; break;
                             case 0x10: fieldLayoutTable.Load(fieldTable, data, ref offset); tables[table] = fieldLayoutTable; break;
-                            case 0x11: StandAloneSigTable standAloneSigTable = new StandAloneSigTable(rows[n], blobHeap, data, ref offset); tables[table] = standAloneSigTable; break;
+                            case 0x11: standAloneSigTable.Load(blobHeap, data, ref offset); tables[table] = standAloneSigTable; break;
                             case 0x14: eventTable.Load(stringHeap, typeDefTable, typeRefTable, typeSpecTable, data, ref offset); tables[table] = eventTable; break;
                             case 0x15: propertyMapTable.Load(typeDefTable, propertyTable, data, ref offset); tables[table] = propertyMapTable; break;
                             case 0x17: propertyTable.Load(stringHeap, blobHeap, data, ref offset); tables[table] = propertyTable; break;
@@ -224,10 +233,12 @@ namespace Runic.Dotnet
                             case 0x2C: genericParamConstraintTable.Load(genericParamTable, typeDefTable, typeRefTable, typeSpecTable, data, ref offset); tables[table] = genericParamConstraintTable; break;
                             case 0x30: documentTable = new DocumentTable(rows[n], blobHeap, GUIDHeap, data, ref offset); tables[table] = documentTable; break;
                             case 0x31: MethodDebugInformationTable methodDebugInformationTable = new MethodDebugInformationTable(rows[n], documentTable, blobHeap, data, ref offset); tables[table] = methodDebugInformationTable; break;
-                            case 0x32: LocalScopeTable localScopeTable = new LocalScopeTable(rows[n], methodDefTable, importScopeTable, localVariableTable, localConstantTable, data, ref offset); tables[table] = localScopeTable; break;
+                            case 0x32: localScopeTable.Load(methodDefTable, importScopeTable, localVariableTable, localConstantTable, data, ref offset); tables[table] = localScopeTable; break;
                             case 0x33: localVariableTable.Load(stringHeap, data, ref offset); tables[table] = localVariableTable; break;
                             case 0x34: localConstantTable.Load(stringHeap, blobHeap, data, ref offset); tables[table] = localConstantTable; break;
                             case 0x35: importScopeTable.Load(blobHeap, data, ref offset); tables[table] = importScopeTable; break;
+                            case 0x36: stateMachineMethodTable.Load(methodDefTable, data, ref offset); tables[table] = stateMachineMethodTable; break;
+                            case 0x37: customDebugInformationTable.Load(blobHeap, GUIDHeap, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, propertyTable, eventTable, standAloneSigTable, moduleRefTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable, documentTable, localScopeTable, localVariableTable, localConstantTable, importScopeTable, data, ref offset); tables[table] = customDebugInformationTable; break;
                         }
                         table++;
                     }
@@ -272,6 +283,7 @@ namespace Runic.Dotnet
                 InterfaceImplTable? interfaceImplTable = null;
                 DocumentTable? documentTable = null;
                 ConstantTable? constantTable = null;
+                LocalScopeTable? localScopeTable = null;
                 LocalVariableTable? localVariableTable = null;
                 LocalConstantTable? localConstantTable = null;
                 ImportScopeTable? importScopeTable = null;
@@ -282,6 +294,7 @@ namespace Runic.Dotnet
                 FieldMarshalTable? fieldMarshalTable = null;
                 ClassLayoutTable? classLayoutTable = null;
                 FieldLayoutTable? fieldLayoutTable = null;
+                StandAloneSigTable? standAloneSigTable = null;
                 FileTable? fileTable = null;
                 ExportedTypeTable? exportedTypeTable = null;
                 ManifestResourceTable? manifestResourceTable = null;
@@ -299,6 +312,8 @@ namespace Runic.Dotnet
                 AssemblyRefTable? assemblyRefTable = null;
                 MemberRefTable? memberRefTable = null;
                 DeclSecurityTable? declSecurityTable = null;
+                StateMachineMethodTable? stateMachineMethodTable = null;
+                CustomDebugInformationTable? customDebugInformationTable = null;
 #else
                 FieldTable fieldTable = null;
                 MethodDefTable methodDefTable = null;
@@ -306,6 +321,7 @@ namespace Runic.Dotnet
                 InterfaceImplTable interfaceImplTable = null;
                 DocumentTable documentTable = null;
                 ConstantTable constantTable = null;
+                LocalScopeTable localScopeTable = null;
                 LocalVariableTable localVariableTable = null;
                 LocalConstantTable localConstantTable = null;
                 ImportScopeTable importScopeTable = null;
@@ -316,6 +332,7 @@ namespace Runic.Dotnet
                 FieldMarshalTable fieldMarshalTable = null;
                 ClassLayoutTable classLayoutTable = null;
                 FieldLayoutTable fieldLayoutTable = null;
+                StandAloneSigTable standAloneSigTable = null;
                 ModuleRefTable moduleRefTable = null;
                 FileTable fileTable = null;
                 ExportedTypeTable exportedTypeTable = null;
@@ -333,6 +350,8 @@ namespace Runic.Dotnet
                 AssemblyRefTable assemblyRefTable = null;
                 MemberRefTable memberRefTable = null;
                 DeclSecurityTable declSecurityTable = null;
+                StateMachineMethodTable stateMachineMethodTable = null;
+                CustomDebugInformationTable customDebugInformationTable = null;
 #endif
                 fieldTable = new FieldTable(rows[0x4]);
                 methodDefTable = new MethodDefTable(rows[0x6]);
@@ -344,6 +363,7 @@ namespace Runic.Dotnet
                 if ((validTables & (1UL << 0x0E)) != 0) { declSecurityTable = new DeclSecurityTable(rows[0x0E]); }
                 if ((validTables & (1UL << 0x0F)) != 0) { classLayoutTable = new ClassLayoutTable(rows[0x0F]); }
                 if ((validTables & (1UL << 0x10)) != 0) { fieldLayoutTable = new FieldLayoutTable(rows[0x10]); }
+                if ((validTables & (1UL << 0x11)) != 0) { standAloneSigTable = new StandAloneSigTable(rows[0x11]); }
                 if ((validTables & (1UL << 0x12)) != 0) { eventMapTable = new EventMapTable(rows[0x12]); }
                 if ((validTables & (1UL << 0x14)) != 0) { eventTable = new EventTable(rows[0x14]); }
                 if ((validTables & (1UL << 0x15)) != 0) { propertyMapTable = new PropertyMapTable(rows[0x15]); }
@@ -360,8 +380,11 @@ namespace Runic.Dotnet
                 if ((validTables & (1UL << 0x2A)) != 0) { genericParamTable = new GenericParamTable(rows[0x2A]); }
                 if ((validTables & (1UL << 0x2B)) != 0) { methodSpecTable = new MethodSpecTable(rows[0x2B]); }
                 if ((validTables & (1UL << 0x2C)) != 0) { genericParamConstraintTable = new GenericParamConstraintTable(rows[0x2C]); }
+                if ((validTables & (1UL << 0x32)) != 0) { localScopeTable = new LocalScopeTable(rows[0x32]); }
                 if ((validTables & (1UL << 0x33)) != 0) { localVariableTable = new LocalVariableTable(rows[0x33]); }
                 if ((validTables & (1UL << 0x35)) != 0) { importScopeTable = new ImportScopeTable(rows[0x35]); }
+                if ((validTables & (1UL << 0x36)) != 0) { stateMachineMethodTable = new StateMachineMethodTable(rows[0x36]); }
+                if ((validTables & (1UL << 0x37)) != 0) { customDebugInformationTable = new CustomDebugInformationTable(rows[0x37]); }
 
                 for (int n = 0, table = 0; n < 64; n++)
                 {
@@ -383,7 +406,7 @@ namespace Runic.Dotnet
                             case 0x0E: declSecurityTable.Load(blobHeap, typeDefTable, methodDefTable, assemblyTable, reader); tables[table] = declSecurityTable; break;
                             case 0x0F: classLayoutTable.Load(typeDefTable, reader); tables[table] = classLayoutTable; break;
                             case 0x10: fieldLayoutTable.Load(fieldTable, reader); tables[table] = fieldLayoutTable; break;
-                            case 0x11: StandAloneSigTable standAloneSigTable = new StandAloneSigTable(rows[n], blobHeap, reader); tables[table] = standAloneSigTable; break;
+                            case 0x11: standAloneSigTable.Load(blobHeap, reader); tables[table] = standAloneSigTable; break;
                             case 0x12: eventMapTable.Load(typeDefTable, eventTable, reader); tables[table] = eventMapTable; break;
                             case 0x14: eventTable.Load(stringHeap, typeDefTable, typeRefTable, typeSpecTable, reader); tables[table] = eventTable; break;
                             case 0x15: propertyMapTable.Load(typeDefTable, propertyTable, reader); tables[table] = propertyMapTable; break;
@@ -405,10 +428,12 @@ namespace Runic.Dotnet
                             case 0x2C: genericParamConstraintTable.Load(genericParamTable, typeDefTable, typeRefTable, typeSpecTable, reader); tables[table] = genericParamConstraintTable; break;
                             case 0x30: documentTable = new DocumentTable(rows[n], blobHeap, GUIDHeap, reader); tables[table] = documentTable; break;
                             case 0x31: MethodDebugInformationTable methodDebugInformationTable = new MethodDebugInformationTable(rows[n], documentTable, blobHeap, reader); tables[table] = methodDebugInformationTable; break;
-                            case 0x32: LocalScopeTable localScopeTable = new LocalScopeTable(rows[n], methodDefTable, importScopeTable, localVariableTable, localConstantTable, reader); tables[table] = localScopeTable; break;
+                            case 0x32: localScopeTable.Load(methodDefTable, importScopeTable, localVariableTable, localConstantTable, reader); tables[table] = localScopeTable; break;
                             case 0x33: localVariableTable.Load(stringHeap, reader); tables[table] = localVariableTable; break;
                             case 0x34: localConstantTable.Load(stringHeap, blobHeap, reader); tables[table] = localConstantTable; break;
                             case 0x35: importScopeTable.Load(blobHeap, reader); tables[table] = importScopeTable; break;
+                            case 0x36: stateMachineMethodTable.Load(methodDefTable, reader); tables[table] = stateMachineMethodTable; break;
+                            case 0x37: customDebugInformationTable.Load(blobHeap, GUIDHeap, methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, propertyTable, eventTable, standAloneSigTable, moduleRefTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable, documentTable, localScopeTable, localVariableTable, localConstantTable, importScopeTable, reader); tables[table] = customDebugInformationTable; break;
                         }
                         table++;
                     }
@@ -459,6 +484,8 @@ namespace Runic.Dotnet
                 LocalVariableTable? localVariableTable = null;
                 LocalConstantTable? localConstantTable = null;
                 ImportScopeTable? importScopeTable = null;
+                StateMachineMethodTable? stateMachineMethodTable = null;
+                CustomDebugInformationTable? customDebugInformationTable = null;
 #else
                 ModuleTable moduleTable = null;
                 TypeRefTable typeRefTable = null;
@@ -500,6 +527,8 @@ namespace Runic.Dotnet
                 LocalVariableTable localVariableTable = null;
                 LocalConstantTable localConstantTable = null;
                 ImportScopeTable importScopeTable = null;
+                StateMachineMethodTable stateMachineMethodTable = null;
+                CustomDebugInformationTable customDebugInformationTable = null;
 #endif
                 uint[] rows = new uint[64];
                 ulong validTables = 0;
@@ -548,6 +577,8 @@ namespace Runic.Dotnet
                         case LocalVariableTable table: if (localVariableTable != null) { throw new System.Exception("More than one LocalVariable Table was provided"); } localVariableTable = table; rows[0x33] = table.Rows; validTables |= (1UL << 0x33); break;
                         case LocalConstantTable table: if (localConstantTable != null) { throw new System.Exception("More than one LocalConstant Table was provided"); } localConstantTable = table; rows[0x34] = table.Rows; validTables |= (1UL << 0x34); break;
                         case ImportScopeTable table: if (importScopeTable != null) { throw new System.Exception("More than one ImportScope Table was provided"); } importScopeTable = table; rows[0x35] = table.Rows; validTables |= (1UL << 0x35); break;
+                        case StateMachineMethodTable table: if (stateMachineMethodTable != null) { throw new System.Exception("More than one StateMachineMethod Table was provided"); } stateMachineMethodTable = table; rows[0x36] = table.Rows; validTables |= (1UL << 0x36); break;
+                        case CustomDebugInformationTable table: if (customDebugInformationTable != null) { throw new System.Exception("More than one CustomDebugInformation Table was provided"); } customDebugInformationTable = table; rows[0x37] = table.Rows; validTables |= (1UL << 0x37); break;
                     }
                 }
 
@@ -608,6 +639,8 @@ namespace Runic.Dotnet
                             case 0x33: binaryWriter.Write(localVariableTable.Rows); break;
                             case 0x34: binaryWriter.Write(localConstantTable.Rows); break;
                             case 0x35: binaryWriter.Write(importScopeTable.Rows); break;
+                            case 0x36: binaryWriter.Write(stateMachineMethodTable.Rows); break;
+                            case 0x37: binaryWriter.Write(customDebugInformationTable.Rows); break;
                         }
                         table++;
                     }
@@ -659,6 +692,8 @@ namespace Runic.Dotnet
                             case 0x33: localVariableTable.Save(binaryWriter); break;
                             case 0x34: localConstantTable.Save(binaryWriter); break;
                             case 0x35: importScopeTable.Save(binaryWriter); break;
+                            case 0x36: stateMachineMethodTable.Save(binaryWriter); break;
+                            case 0x37: customDebugInformationTable.Save(methodDefTable, fieldTable, typeRefTable, typeDefTable, paramTable, interfaceImplTable, memberRefTable, moduleTable, declSecurityTable, propertyTable, eventTable, standAloneSigTable, moduleRefTable, typeSpecTable, assemblyTable, assemblyRefTable, fileTable, exportedTypeTable, manifestResourceTable, genericParamTable, genericParamConstraintTable, methodSpecTable, documentTable, localScopeTable, localVariableTable, localConstantTable, importScopeTable, binaryWriter); break;
                         }
                         table++;
                     }

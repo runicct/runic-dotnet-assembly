@@ -34,7 +34,7 @@ namespace Runic.Dotnet
             public class LocalVariableTable : MetadataTable
             {
                 List<LocalVariableTableRow> _rows = new List<LocalVariableTableRow>();
-                public class LocalVariableTableRow : MetadataTableRow
+                public class LocalVariableTableRow : MetadataTableRow, IHasCustomDebugInformation
                 {
                     uint _row;
                     public override uint Row { get { return _row; } }

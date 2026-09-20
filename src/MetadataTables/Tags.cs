@@ -895,7 +895,235 @@ namespace Runic.Dotnet
 
             public interface IMemberForwarded
             {
-                
+
+            }
+
+#if NET6_0_OR_GREATER
+            internal static bool HasCustomDebugInformationLargeIndices(MethodDefTable? methodDefTable, FieldTable? fieldTable, TypeRefTable? typeRefTable, TypeDefTable? typeDefTable, ParamTable? paramTable, InterfaceImplTable? interfaceImplTable, MemberRefTable? memberRefTable, ModuleTable? moduleTable, DeclSecurityTable? declSecurityTable, PropertyTable? propertyTable, EventTable? eventTable, StandAloneSigTable? standAloneSigTable, ModuleRefTable? moduleRefTable, TypeSpecTable? typeSpecTable, AssemblyTable? assemblyTable, AssemblyRefTable? assemblyRefTable, FileTable? fileTable, ExportedTypeTable? exportedTypeTable, ManifestResourceTable? manifestResourceTable, GenericParamTable? genericParamTable, GenericParamConstraintTable? genericParamConstraintTable, MethodSpecTable? methodSpecTable, DocumentTable? documentTable, LocalScopeTable? localScopeTable, LocalVariableTable? localVariableTable, LocalConstantTable? localConstantTable, ImportScopeTable? importScopeTable)
+#else
+            internal static bool HasCustomDebugInformationLargeIndices(MethodDefTable methodDefTable, FieldTable fieldTable, TypeRefTable typeRefTable, TypeDefTable typeDefTable, ParamTable paramTable, InterfaceImplTable interfaceImplTable, MemberRefTable memberRefTable, ModuleTable moduleTable, DeclSecurityTable declSecurityTable, PropertyTable propertyTable, EventTable eventTable, StandAloneSigTable standAloneSigTable, ModuleRefTable moduleRefTable, TypeSpecTable typeSpecTable, AssemblyTable assemblyTable, AssemblyRefTable assemblyRefTable, FileTable fileTable, ExportedTypeTable exportedTypeTable, ManifestResourceTable manifestResourceTable, GenericParamTable genericParamTable, GenericParamConstraintTable genericParamConstraintTable, MethodSpecTable methodSpecTable, DocumentTable documentTable, LocalScopeTable localScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, ImportScopeTable importScopeTable)
+#endif
+            {
+                const uint maxRows = 0x7FFF;
+                if ((methodDefTable != null) && (methodDefTable.Rows >= maxRows)) { return true; }
+                if ((fieldTable != null) && (fieldTable.Rows >= maxRows)) { return true; }
+                if ((typeRefTable != null) && (typeRefTable.Rows >= maxRows)) { return true; }
+                if ((typeDefTable != null) && (typeDefTable.Rows >= maxRows)) { return true; }
+                if ((paramTable != null) && (paramTable.Rows >= maxRows)) { return true; }
+                if ((interfaceImplTable != null) && (interfaceImplTable.Rows >= maxRows)) { return true; }
+                if ((memberRefTable != null) && (memberRefTable.Rows >= maxRows)) { return true; }
+                if ((moduleTable != null) && (moduleTable.Rows >= maxRows)) { return true; }
+                if ((declSecurityTable != null) && (declSecurityTable.Rows >= maxRows)) { return true; }
+                if ((propertyTable != null) && (propertyTable.Rows >= maxRows)) { return true; }
+                if ((eventTable != null) && (eventTable.Rows >= maxRows)) { return true; }
+                if ((standAloneSigTable != null) && (standAloneSigTable.Rows >= maxRows)) { return true; }
+                if ((moduleRefTable != null) && (moduleRefTable.Rows >= maxRows)) { return true; }
+                if ((typeSpecTable != null) && (typeSpecTable.Rows >= maxRows)) { return true; }
+                if ((assemblyTable != null) && (assemblyTable.Rows >= maxRows)) { return true; }
+                if ((assemblyRefTable != null) && (assemblyRefTable.Rows >= maxRows)) { return true; }
+                if ((fileTable != null) && (fileTable.Rows >= maxRows)) { return true; }
+                if ((exportedTypeTable != null) && (exportedTypeTable.Rows >= maxRows)) { return true; }
+                if ((manifestResourceTable != null) && (manifestResourceTable.Rows >= maxRows)) { return true; }
+                if ((genericParamTable != null) && (genericParamTable.Rows >= maxRows)) { return true; }
+                if ((genericParamConstraintTable != null) && (genericParamConstraintTable.Rows >= maxRows)) { return true; }
+                if ((methodSpecTable != null) && (methodSpecTable.Rows >= maxRows)) { return true; }
+                if ((documentTable != null) && (documentTable.Rows >= maxRows)) { return true; }
+                if ((localScopeTable != null) && (localScopeTable.Rows >= maxRows)) { return true; }
+                if ((localVariableTable != null) && (localVariableTable.Rows >= maxRows)) { return true; }
+                if ((localConstantTable != null) && (localConstantTable.Rows >= maxRows)) { return true; }
+                if ((importScopeTable != null) && (importScopeTable.Rows >= maxRows)) { return true; }
+                return false;
+            }
+
+#if NET6_0_OR_GREATER
+            internal static IHasCustomDebugInformation? HasCustomDebugInformationDecode(uint tag, MethodDefTable? methodDefTable, FieldTable? fieldTable, TypeRefTable? typeRefTable, TypeDefTable? typeDefTable, ParamTable? paramTable, InterfaceImplTable? interfaceImplTable, MemberRefTable? memberRefTable, ModuleTable? moduleTable, DeclSecurityTable? declSecurityTable, PropertyTable? propertyTable, EventTable? eventTable, StandAloneSigTable? standAloneSigTable, ModuleRefTable? moduleRefTable, TypeSpecTable? typeSpecTable, AssemblyTable? assemblyTable, AssemblyRefTable? assemblyRefTable, FileTable? fileTable, ExportedTypeTable? exportedTypeTable, ManifestResourceTable? manifestResourceTable, GenericParamTable? genericParamTable, GenericParamConstraintTable? genericParamConstraintTable, MethodSpecTable? methodSpecTable, DocumentTable? documentTable, LocalScopeTable? localScopeTable, LocalVariableTable? localVariableTable, LocalConstantTable? localConstantTable, ImportScopeTable? importScopeTable)
+#else
+            internal static IHasCustomDebugInformation  HasCustomDebugInformationDecode(uint tag, MethodDefTable methodDefTable, FieldTable fieldTable, TypeRefTable typeRefTable, TypeDefTable typeDefTable, ParamTable paramTable, InterfaceImplTable interfaceImplTable, MemberRefTable memberRefTable, ModuleTable moduleTable, DeclSecurityTable declSecurityTable, PropertyTable propertyTable, EventTable eventTable, StandAloneSigTable standAloneSigTable, ModuleRefTable moduleRefTable, TypeSpecTable typeSpecTable, AssemblyTable assemblyTable, AssemblyRefTable assemblyRefTable, FileTable fileTable, ExportedTypeTable exportedTypeTable, ManifestResourceTable manifestResourceTable, GenericParamTable genericParamTable, GenericParamConstraintTable genericParamConstraintTable, MethodSpecTable methodSpecTable, DocumentTable documentTable, LocalScopeTable localScopeTable, LocalVariableTable localVariableTable, LocalConstantTable localConstantTable, ImportScopeTable importScopeTable)
+#endif
+            {
+                uint index = tag >> 5;
+                uint type = tag & 0x1F;
+                switch (type)
+                {
+                    case 0x0:
+                        {
+                            if (methodDefTable == null) { return null; }
+                            return methodDefTable[index];
+                        }
+                    case 0x1:
+                        {
+                            if (fieldTable == null) { return null; }
+                            return fieldTable[index];
+                        }
+                    case 0x2:
+                        {
+                            if (typeRefTable == null) { return null; }
+                            return typeRefTable[index];
+                        }
+                    case 0x3:
+                        {
+                            if (typeDefTable == null) { return null; }
+                            return typeDefTable[index];
+                        }
+                    case 0x4:
+                        {
+                            if (paramTable == null) { return null; }
+                            return paramTable[index];
+                        }
+                    case 0x5:
+                        {
+                            if (interfaceImplTable == null) { return null; }
+                            return interfaceImplTable[index];
+                        }
+                    case 0x6:
+                        {
+                            if (memberRefTable == null) { return null; }
+                            return memberRefTable[index];
+                        }
+                    case 0x7:
+                        {
+                            if (moduleTable == null) { return null; }
+                            return moduleTable[index];
+                        }
+                    case 0x8:
+                        {
+                            if (declSecurityTable == null) { return null; }
+                            return declSecurityTable[index];
+                        }
+                    case 0x9:
+                        {
+                            if (propertyTable == null) { return null; }
+                            return propertyTable[index];
+                        }
+                    case 0xA:
+                        {
+                            if (eventTable == null) { return null; }
+                            return eventTable[index];
+                        }
+                    case 0xB:
+                        {
+                            if (standAloneSigTable == null) { return null; }
+                            return standAloneSigTable[index];
+                        }
+                    case 0xC:
+                        {
+                            if (moduleRefTable == null) { return null; }
+                            return moduleRefTable[index];
+                        }
+                    case 0xD:
+                        {
+                            if (typeSpecTable == null) { return null; }
+                            return typeSpecTable[index];
+                        }
+                    case 0xE:
+                        {
+                            if (assemblyTable == null) { return null; }
+                            return assemblyTable[index];
+                        }
+                    case 0xF:
+                        {
+                            if (assemblyRefTable == null) { return null; }
+                            return assemblyRefTable[index];
+                        }
+                    case 0x10:
+                        {
+                            if (fileTable == null) { return null; }
+                            return fileTable[index];
+                        }
+                    case 0x11:
+                        {
+                            if (exportedTypeTable == null) { return null; }
+                            return exportedTypeTable[index];
+                        }
+                    case 0x12:
+                        {
+                            if (manifestResourceTable == null) { return null; }
+                            return manifestResourceTable[index];
+                        }
+                    case 0x13:
+                        {
+                            if (genericParamTable == null) { return null; }
+                            return genericParamTable[index];
+                        }
+                    case 0x14:
+                        {
+                            if (genericParamConstraintTable == null) { return null; }
+                            return genericParamConstraintTable[index];
+                        }
+                    case 0x15:
+                        {
+                            if (methodSpecTable == null) { return null; }
+                            return methodSpecTable[index];
+                        }
+                    case 0x16:
+                        {
+                            if (documentTable == null) { return null; }
+                            return documentTable[index];
+                        }
+                    case 0x17:
+                        {
+                            if (localScopeTable == null) { return null; }
+                            return localScopeTable[index];
+                        }
+                    case 0x18:
+                        {
+                            if (localVariableTable == null) { return null; }
+                            return localVariableTable[index];
+                        }
+                    case 0x19:
+                        {
+                            if (localConstantTable == null) { return null; }
+                            return localConstantTable[index];
+                        }
+                    case 0x1A:
+                        {
+                            if (importScopeTable == null) { return null; }
+                            return importScopeTable[index];
+                        }
+                }
+                return null;
+            }
+
+#if NET6_0_OR_GREATER
+            internal static uint HasCustomDebugInformationEncode(IHasCustomDebugInformation? tag)
+#else
+            internal static uint HasCustomDebugInformationEncode(IHasCustomDebugInformation tag)
+#endif
+            {
+                switch (tag)
+                {
+                    case MethodDefTable.MethodDefTableRow methodDef: return (uint)(methodDef.Row << 5);
+                    case FieldTable.FieldTableRow field: return (uint)(field.Row << 5) | 0x01;
+                    case TypeRefTable.TypeRefTableRow typeRef: return (uint)(typeRef.Row << 5) | 0x02;
+                    case TypeDefTable.TypeDefTableRow typeDef: return (uint)(typeDef.Row << 5) | 0x03;
+                    case ParamTable.ParamTableRow param: return (uint)(param.Row << 5) | 0x04;
+                    case InterfaceImplTable.InterfaceImplTableRow interfaceImpl: return (uint)(interfaceImpl.Row << 5) | 0x05;
+                    case MemberRefTable.MemberRefTableRow memberRef: return (uint)(memberRef.Row << 5) | 0x06;
+                    case ModuleTable.ModuleTableRow module: return (uint)(module.Row << 5) | 0x07;
+                    case DeclSecurityTable.DeclSecurityTableRow declSecurity: return (uint)(declSecurity.Row << 5) | 0x08;
+                    case PropertyTable.PropertyTableRow property: return (uint)(property.Row << 5) | 0x09;
+                    case EventTable.EventTableRow eventDef: return (uint)(eventDef.Row << 5) | 0x0A;
+                    case StandAloneSigTable.StandAloneSigTableRow standAloneSig: return (uint)(standAloneSig.Row << 5) | 0x0B;
+                    case ModuleRefTable.ModuleRefTableRow moduleRef: return (uint)(moduleRef.Row << 5) | 0x0C;
+                    case TypeSpecTable.TypeSpecTableRow typeSpec: return (uint)(typeSpec.Row << 5) | 0x0D;
+                    case AssemblyTable.AssemblyTableRow assembly: return (uint)(assembly.Row << 5) | 0x0E;
+                    case AssemblyRefTable.AssemblyRefTableRow assemblyRef: return (uint)(assemblyRef.Row << 5) | 0x0F;
+                    case FileTable.FileTableRow file: return (uint)(file.Row << 5) | 0x10;
+                    case ExportedTypeTable.ExportedTypeTableRow exportedType: return (uint)(exportedType.Row << 5) | 0x11;
+                    case ManifestResourceTable.ManifestResourceTableRow manifestResource: return (uint)(manifestResource.Row << 5) | 0x12;
+                    case GenericParamTable.GenericParamTableRow genericParam: return (uint)(genericParam.Row << 5) | 0x13;
+                    case GenericParamConstraintTable.GenericParamConstraintTableRow genericParamConstraint: return (uint)(genericParamConstraint.Row << 5) | 0x14;
+                    case MethodSpecTable.MethodSpecTableRow methodSpec: return (uint)(methodSpec.Row << 5) | 0x15;
+                    case DocumentTable.DocumentTableRow document: return (uint)(document.Row << 5) | 0x16;
+                    case LocalScopeTable.LocalScopeTableRow localScope: return (uint)(localScope.Row << 5) | 0x17;
+                    case LocalVariableTable.LocalVariableTableRow localVariable: return (uint)(localVariable.Row << 5) | 0x18;
+                    case LocalConstantTable.LocalConstantTableRow localConstant: return (uint)(localConstant.Row << 5) | 0x19;
+                    case ImportScopeTable.ImportScopeTableRow importScope: return (uint)(importScope.Row << 5) | 0x1A;
+                }
+                return 0;
+            }
+            public interface IHasCustomDebugInformation
+            {
             }
         }
     }
