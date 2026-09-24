@@ -41,10 +41,17 @@ namespace Runic.Dotnet
                     public MethodDefTable.MethodDefTableRow Method { get { return _method; } }
                     ImportScopeTable.ImportScopeTableRow _importScope;
                     public ImportScopeTable.ImportScopeTableRow ImportScope { get { return _importScope; } }
+#if NET6_0_OR_GREATER
+                    LocalVariableTable.LocalVariableTableRow? _variableList;
+                    public LocalVariableTable.LocalVariableTableRow? VariableList { get { return _variableList; } }
+                    LocalConstantTable.LocalConstantTableRow? _constantList;
+                    public LocalConstantTable.LocalConstantTableRow? ConstantList { get { return _constantList; } }
+#else
                     LocalVariableTable.LocalVariableTableRow _variableList;
                     public LocalVariableTable.LocalVariableTableRow VariableList { get { return _variableList; } }
                     LocalConstantTable.LocalConstantTableRow _constantList;
                     public LocalConstantTable.LocalConstantTableRow ConstantList { get { return _constantList; } }
+#endif
                     uint _startOffset;
                     public uint StartOffset { get { return _startOffset; } }
                     uint _length;
@@ -72,9 +79,11 @@ namespace Runic.Dotnet
                         uint importScopeIndex = importScopeTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
                         _importScope = importScopeTable[importScopeIndex];
                         uint variableListIndex = localVariableTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _variableList = localVariableTable[variableListIndex];
+                        if (variableListIndex >= localVariableTable.Rows) { _variableList = null; }
+                        else { _variableList = localVariableTable[variableListIndex]; }
                         uint constantListIndex = localConstantTable.LargeIndices ? reader.ReadUInt32() : reader.ReadUInt16();
-                        _constantList = localConstantTable[constantListIndex];
+                        if (constantListIndex >= localConstantTable.Rows) { _constantList = null; }
+                        else { _constantList = localConstantTable[constantListIndex]; }
                         _startOffset = reader.ReadUInt32();
                         _length = reader.ReadUInt32();
                     }
@@ -89,10 +98,12 @@ namespace Runic.Dotnet
                         _importScope = importScopeTable[importScopeIndex];
                         uint variableListIndex = 0;
                         if (localVariableTable.LargeIndices) { variableListIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { variableListIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _variableList = localVariableTable[variableListIndex];
+                        if (variableListIndex >= localVariableTable.Rows) { _variableList = null; }
+                        else { _variableList = localVariableTable[variableListIndex]; }
                         uint constantListIndex = 0;
                         if (localConstantTable.LargeIndices) { constantListIndex = BitConverterLE.ToUInt32(data, offset); offset += 4; } else { constantListIndex = BitConverterLE.ToUInt16(data, offset); offset += 2; }
-                        _constantList = localConstantTable[constantListIndex];
+                        if (constantListIndex >= localConstantTable.Rows) { _constantList = null; }
+                        else { _constantList = localConstantTable[constantListIndex]; }
                         _startOffset = BitConverterLE.ToUInt32(data, offset); offset += 4;
                         _length = BitConverterLE.ToUInt32(data, offset); offset += 4;
                     }

@@ -1,7 +1,7 @@
 ﻿/*
  * MIT License
  * 
- * Copyright (c) 2025 Runic Compiler Toolkit Contributors
+ * Copyright (c) 2026 Runic Compiler Toolkit Contributors
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,29 +48,9 @@ namespace Runic.Dotnet
 #if NET6_0_OR_GREATER
             public static MetadataTable[] Load(Span<byte> data, uint offset, MetadataRoot root, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
             {
-                Runic.Dotnet.Assembly.MetadataRoot.Stream stringStream = null;
-                Runic.Dotnet.Assembly.MetadataRoot.Stream blobStream = null;
-                Runic.Dotnet.Assembly.MetadataRoot.Stream GUIDStream = null;
-                for (int n = 0; n < root.Streams.Length; n++)
-                {
-                    switch (root.Streams[n].Name)
-                    {
-                        case "#Strings":
-                            stringStream = root.Streams[n];
-                            break;
-                        case "#Blob":
-                            blobStream = root.Streams[n];
-                            break;
-                        case "#GUID":
-                            GUIDStream = root.Streams[n];
-                            break;
-                    }
-                }
-                return Load(data, offset, stringStream, blobStream, GUIDStream, out stringHeap, out blobHeap, out GUIDHeap);
+                return Load(data, offset, root, null, out stringHeap, out blobHeap, out GUIDHeap);
             }
-#endif
-
-            public static MetadataTable[] Load(BinaryReader reader, MetadataRoot root, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+            public static MetadataTable[] Load(Span<byte> data, uint offset, MetadataRoot root, MetadataTable[]? existingTables, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
             {
                 Runic.Dotnet.Assembly.MetadataRoot.Stream stringStream = null;
                 Runic.Dotnet.Assembly.MetadataRoot.Stream blobStream = null;
@@ -90,10 +70,48 @@ namespace Runic.Dotnet
                             break;
                     }
                 }
-                return Load(reader, stringStream, blobStream, GUIDStream, out stringHeap, out blobHeap, out GUIDHeap);
+                return Load(data, offset, existingTables, stringStream, blobStream, GUIDStream, out stringHeap, out blobHeap, out GUIDHeap);
             }
+#endif
+
+            public static MetadataTable[] Load(BinaryReader reader, MetadataRoot root, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+            {
+                return Load(reader, root, null, out stringHeap, out blobHeap, out GUIDHeap);
+            }
+
+#if NET6_0_OR_GREATER
+            public static MetadataTable[] Load(BinaryReader reader, MetadataRoot root, MetadataTable[]? existingTables, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+#else
+            public static MetadataTable[] Load(BinaryReader reader, MetadataRoot root, MetadataTable[] existingTables, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+#endif
+            {
+                Runic.Dotnet.Assembly.MetadataRoot.Stream stringStream = null;
+                Runic.Dotnet.Assembly.MetadataRoot.Stream blobStream = null;
+                Runic.Dotnet.Assembly.MetadataRoot.Stream GUIDStream = null;
+                for (int n = 0; n < root.Streams.Length; n++)
+                {
+                    switch (root.Streams[n].Name)
+                    {
+                        case "#Strings":
+                            stringStream = root.Streams[n];
+                            break;
+                        case "#Blob":
+                            blobStream = root.Streams[n];
+                            break;
+                        case "#GUID":
+                            GUIDStream = root.Streams[n];
+                            break;
+                    }
+                }
+                return Load(reader, existingTables, stringStream, blobStream, GUIDStream, out stringHeap, out blobHeap, out GUIDHeap);
+            }
+
 #if NET6_0_OR_GREATER
             public static MetadataTable[] Load(Span<byte> data, uint offset, MetadataRoot.Stream strings, MetadataRoot.Stream blob, MetadataRoot.Stream GUID, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+            {
+                return Load(data, offset, null, strings, blob, GUID, out stringHeap, out blobHeap, out GUIDHeap);
+            }
+            public static MetadataTable[] Load(Span<byte> data, uint offset, MetadataTable[]? existingTables, MetadataRoot.Stream strings, MetadataRoot.Stream blob, MetadataRoot.Stream GUID, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
             {
                 offset += 4; // Reserved
                 byte tableSchemataMajorVersion = data[(int)offset]; offset++;
@@ -143,6 +161,7 @@ namespace Runic.Dotnet
                 FieldLayoutTable? fieldLayoutTable = null;
                 StandAloneSigTable? standAloneSigTable = null;
                 EventTable? eventTable = null;
+                EventMapTable? eventMapTable = null;
                 FileTable? fileTable = null;
                 ExportedTypeTable? exportedTypeTable = null;
                 ManifestResourceTable? manifestResourceTable = null;
@@ -159,10 +178,53 @@ namespace Runic.Dotnet
                 StateMachineMethodTable? stateMachineMethodTable = null;
                 CustomDebugInformationTable? customDebugInformationTable = null;
 
-                fieldTable = new FieldTable(rows[0x4]);
-                methodDefTable = new MethodDefTable(rows[0x6]);
-                paramTable = new ParamTable(rows[0x8]);
+                if (existingTables != null)
+                {
+                    for (int n = 0; n < existingTables.Length; n++)
+                    {
+                        switch (existingTables[n])
+                        {
+                            case TypeRefTable typeRef: typeRefTable = typeRef; break;
+                            case InterfaceImplTable interfaceImpl: interfaceImplTable = interfaceImpl; break;
+                            case ConstantTable constant: constantTable = constant; break;
+                            case FieldMarshalTable fieldMarshal: fieldMarshalTable = fieldMarshal; break;
+                            case DeclSecurityTable declSecurity: declSecurityTable = declSecurity; break;
+                            case ClassLayoutTable classLayout: classLayoutTable = classLayout; break;
+                            case FieldLayoutTable fieldLayout: fieldLayoutTable = fieldLayout; break;
+                            case StandAloneSigTable standAloneSig: standAloneSigTable = standAloneSig; break;
+                            case EventMapTable eventMap: eventMapTable = eventMap; break;
+                            case EventTable eventTbl: eventTable = eventTbl; break;
+                            case PropertyMapTable propertyMap: propertyMapTable = propertyMap; break;
+                            case PropertyTable propertyTbl: propertyTable = propertyTbl; break;
+                            case MethodSemanticsTable methodSemantics: methodSemanticsTable = methodSemantics; break;
+                            case MethodImplTable methodImpl: methodImplTable = methodImpl; break;
+                            case ModuleRefTable moduleRef: moduleRefTable = moduleRef; break;
+                            case TypeSpecTable typeSpec: typeSpecTable = typeSpec; break;
+                            case AssemblyTable assembly: assemblyTable = assembly; break;
+                            case AssemblyRefTable assemblyRef: assemblyRefTable = assemblyRef; break;
+                            case FileTable file: fileTable = file; break;
+                            case ExportedTypeTable exportedType: exportedTypeTable = exportedType; break;
+                            case ManifestResourceTable manifestResource: manifestResourceTable = manifestResource; break;
+                            case GenericParamTable genericParam: genericParamTable = genericParam; break;
+                            case MethodSpecTable methodSpec: methodSpecTable = methodSpec; break;
+                            case GenericParamConstraintTable genericParamConstraint: genericParamConstraintTable = genericParamConstraint; break;
+                            case LocalConstantTable localConstant: localConstantTable = localConstant; break;
+                            case LocalScopeTable localScope: localScopeTable = localScope; break;
+                            case LocalVariableTable localVariable: localVariableTable = localVariable; break;
+                            case ImportScopeTable importScope: importScopeTable = importScope; break;
+                            case StateMachineMethodTable stateMachineMethod: stateMachineMethodTable = stateMachineMethod; break;
+                            case CustomDebugInformationTable customDebugInformation: customDebugInformationTable = customDebugInformation; break;
+                            case FieldTable field: fieldTable = field; break;
+                            case MethodDefTable methodDef: methodDefTable = methodDef; break;
+                            case ParamTable param: paramTable = param; break;
+                        }
+                    }
+                }
+
                 if ((validTables & (1UL << 0x01)) != 0) { typeRefTable = new TypeRefTable(rows[0x01]); }
+                if ((validTables & (1UL << 0x04)) != 0) { fieldTable = new FieldTable(rows[0x4]); } else if (fieldTable == null) { fieldTable = new FieldTable(0); }
+                if ((validTables & (1UL << 0x06)) != 0) { methodDefTable = new MethodDefTable(rows[0x6]); } else if (methodDefTable == null) { methodDefTable = new MethodDefTable(0); }
+                if ((validTables & (1UL << 0x08)) != 0) { paramTable = new ParamTable(rows[0x8]); } else if (paramTable == null) { paramTable = new ParamTable(0); }
                 if ((validTables & (1UL << 0x09)) != 0) { interfaceImplTable = new InterfaceImplTable(rows[0x09]); }
                 if ((validTables & (1UL << 0x0B)) != 0) { constantTable = new ConstantTable(rows[0x0B]); }
                 if ((validTables & (1UL << 0x0D)) != 0) { fieldMarshalTable = new FieldMarshalTable(rows[0x0D]); }
@@ -170,6 +232,7 @@ namespace Runic.Dotnet
                 if ((validTables & (1UL << 0x0F)) != 0) { classLayoutTable = new ClassLayoutTable(rows[0x0F]); }
                 if ((validTables & (1UL << 0x10)) != 0) { fieldLayoutTable = new FieldLayoutTable(rows[0x10]); }
                 if ((validTables & (1UL << 0x11)) != 0) { standAloneSigTable= new StandAloneSigTable(rows[0x11]); };
+                if ((validTables & (1UL << 0x12)) != 0) { eventMapTable = new EventMapTable(rows[0x12]); }
                 if ((validTables & (1UL << 0x14)) != 0) { eventTable = new EventTable(rows[0x14]); }
                 if ((validTables & (1UL << 0x15)) != 0) { propertyMapTable = new PropertyMapTable(rows[0x15]); }
                 if ((validTables & (1UL << 0x17)) != 0) { propertyTable = new PropertyTable(rows[0x17]); }
@@ -187,7 +250,7 @@ namespace Runic.Dotnet
                 if ((validTables & (1UL << 0x2C)) != 0) { genericParamConstraintTable = new GenericParamConstraintTable(rows[0x2C]); }
                 if ((validTables & (1UL << 0x32)) != 0) { localScopeTable = new LocalScopeTable(rows[0x32]); }
                 if ((validTables & (1UL << 0x33)) != 0) { localVariableTable = new LocalVariableTable(rows[0x33]); }
-                if ((validTables & (1UL << 0x34)) != 0) { localConstantTable = new LocalConstantTable(rows[0x34]); }
+                if ((validTables & (1UL << 0x34)) != 0) { localConstantTable = new LocalConstantTable(rows[0x34]); } else if (localConstantTable == null) { localConstantTable = new LocalConstantTable(0); }
                 if ((validTables & (1UL << 0x35)) != 0) { importScopeTable = new ImportScopeTable(rows[0x35]); }
                 if ((validTables & (1UL << 0x36)) != 0) { stateMachineMethodTable = new StateMachineMethodTable(rows[0x36]); }
                 if ((validTables & (1UL << 0x37)) != 0) { customDebugInformationTable = new CustomDebugInformationTable(rows[0x37]); }
@@ -213,6 +276,7 @@ namespace Runic.Dotnet
                             case 0x0F: classLayoutTable.Load(typeDefTable, data, ref offset); tables[table] = classLayoutTable; break;
                             case 0x10: fieldLayoutTable.Load(fieldTable, data, ref offset); tables[table] = fieldLayoutTable; break;
                             case 0x11: standAloneSigTable.Load(blobHeap, data, ref offset); tables[table] = standAloneSigTable; break;
+                            case 0x12: eventMapTable.Load(typeDefTable, eventTable, data, ref offset); tables[table] = eventMapTable; break;
                             case 0x14: eventTable.Load(stringHeap, typeDefTable, typeRefTable, typeSpecTable, data, ref offset); tables[table] = eventTable; break;
                             case 0x15: propertyMapTable.Load(typeDefTable, propertyTable, data, ref offset); tables[table] = propertyMapTable; break;
                             case 0x17: propertyTable.Load(stringHeap, blobHeap, data, ref offset); tables[table] = propertyTable; break;
@@ -247,6 +311,15 @@ namespace Runic.Dotnet
             }
 #endif
             public static MetadataTable[] Load(BinaryReader reader, MetadataRoot.Stream strings, MetadataRoot.Stream blob, MetadataRoot.Stream GUID, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+            {
+                return Load(reader, null, strings, blob, GUID, out stringHeap, out blobHeap, out GUIDHeap);
+            }
+
+#if NET6_0_OR_GREATER
+            public static MetadataTable[] Load(BinaryReader reader, MetadataTable[]? existingTables, MetadataRoot.Stream strings, MetadataRoot.Stream blob, MetadataRoot.Stream GUID, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+#else
+            public static MetadataTable[] Load(BinaryReader reader, MetadataTable[] existingTables, MetadataRoot.Stream strings, MetadataRoot.Stream blob, MetadataRoot.Stream GUID, out Heap.StringHeap stringHeap, out Heap.BlobHeap blobHeap, out Heap.GUIDHeap GUIDHeap)
+#endif
             {
                 reader.ReadUInt32(); // Reserved
                 byte tableSchemataMajorVersion = reader.ReadByte();
@@ -353,10 +426,53 @@ namespace Runic.Dotnet
                 StateMachineMethodTable stateMachineMethodTable = null;
                 CustomDebugInformationTable customDebugInformationTable = null;
 #endif
-                fieldTable = new FieldTable(rows[0x4]);
-                methodDefTable = new MethodDefTable(rows[0x6]);
-                paramTable = new ParamTable(rows[0x8]);
+                if (existingTables != null)
+                {
+                    for (int n = 0; n < existingTables.Length; n++)
+                    {
+                        switch (existingTables[n])
+                        {
+                            case TypeRefTable typeRef: typeRefTable = typeRef; break;
+                            case InterfaceImplTable interfaceImpl: interfaceImplTable = interfaceImpl; break;
+                            case ConstantTable constant: constantTable = constant; break;
+                            case FieldMarshalTable fieldMarshal: fieldMarshalTable = fieldMarshal; break;
+                            case DeclSecurityTable declSecurity: declSecurityTable = declSecurity; break;
+                            case ClassLayoutTable classLayout: classLayoutTable = classLayout; break;
+                            case FieldLayoutTable fieldLayout: fieldLayoutTable = fieldLayout; break;
+                            case StandAloneSigTable standAloneSig: standAloneSigTable = standAloneSig; break;
+                            case EventMapTable eventMap: eventMapTable = eventMap; break;
+                            case EventTable eventTbl: eventTable = eventTbl; break;
+                            case PropertyMapTable propertyMap: propertyMapTable = propertyMap; break;
+                            case PropertyTable propertyTbl: propertyTable = propertyTbl; break;
+                            case MethodSemanticsTable methodSemantics: methodSemanticsTable = methodSemantics; break;
+                            case MethodImplTable methodImpl: methodImplTable = methodImpl; break;
+                            case ModuleRefTable moduleRef: moduleRefTable = moduleRef; break;
+                            case TypeSpecTable typeSpec: typeSpecTable = typeSpec; break;
+                            case AssemblyTable assembly: assemblyTable = assembly; break;
+                            case AssemblyRefTable assemblyRef: assemblyRefTable = assemblyRef; break;
+                            case FileTable file: fileTable = file; break;
+                            case ExportedTypeTable exportedType: exportedTypeTable = exportedType; break;
+                            case ManifestResourceTable manifestResource: manifestResourceTable = manifestResource; break;
+                            case GenericParamTable genericParam: genericParamTable = genericParam; break;
+                            case MethodSpecTable methodSpec: methodSpecTable = methodSpec; break;
+                            case GenericParamConstraintTable genericParamConstraint: genericParamConstraintTable = genericParamConstraint; break;
+                            case LocalConstantTable localConstant: localConstantTable = localConstant; break;
+                            case LocalScopeTable localScope: localScopeTable = localScope; break;
+                            case LocalVariableTable localVariable: localVariableTable = localVariable; break;
+                            case ImportScopeTable importScope: importScopeTable = importScope; break;
+                            case StateMachineMethodTable stateMachineMethod: stateMachineMethodTable = stateMachineMethod; break;
+                            case CustomDebugInformationTable customDebugInformation: customDebugInformationTable = customDebugInformation; break;
+                            case FieldTable field: fieldTable = field; break;
+                            case MethodDefTable methodDef: methodDefTable = methodDef; break;
+                            case ParamTable param: paramTable = param; break;
+                        }
+                    }
+                }
+
                 if ((validTables & (1UL << 0x01)) != 0) { typeRefTable = new TypeRefTable(rows[0x01]); }
+                if ((validTables & (1UL << 0x04)) != 0) { fieldTable = new FieldTable(rows[0x4]); } else if (fieldTable == null) { fieldTable = new FieldTable(0); }
+                if ((validTables & (1UL << 0x06)) != 0) { methodDefTable = new MethodDefTable(rows[0x6]); } else if (methodDefTable == null) { methodDefTable = new MethodDefTable(0); }
+                if ((validTables & (1UL << 0x08)) != 0) { paramTable = new ParamTable(rows[0x8]); } else if (paramTable == null) { paramTable = new ParamTable(0); }
                 if ((validTables & (1UL << 0x09)) != 0) { interfaceImplTable = new InterfaceImplTable(rows[0x09]); }
                 if ((validTables & (1UL << 0x0B)) != 0) { constantTable = new ConstantTable(rows[0x0B]); }
                 if ((validTables & (1UL << 0x0D)) != 0) { fieldMarshalTable = new FieldMarshalTable(rows[0x0D]); }
@@ -382,6 +498,7 @@ namespace Runic.Dotnet
                 if ((validTables & (1UL << 0x2C)) != 0) { genericParamConstraintTable = new GenericParamConstraintTable(rows[0x2C]); }
                 if ((validTables & (1UL << 0x32)) != 0) { localScopeTable = new LocalScopeTable(rows[0x32]); }
                 if ((validTables & (1UL << 0x33)) != 0) { localVariableTable = new LocalVariableTable(rows[0x33]); }
+                if ((validTables & (1UL << 0x34)) != 0) { localConstantTable = new LocalConstantTable(rows[0x34]); } else if (localConstantTable == null) { localConstantTable = new LocalConstantTable(0); }
                 if ((validTables & (1UL << 0x35)) != 0) { importScopeTable = new ImportScopeTable(rows[0x35]); }
                 if ((validTables & (1UL << 0x36)) != 0) { stateMachineMethodTable = new StateMachineMethodTable(rows[0x36]); }
                 if ((validTables & (1UL << 0x37)) != 0) { customDebugInformationTable = new CustomDebugInformationTable(rows[0x37]); }
