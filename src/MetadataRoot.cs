@@ -197,7 +197,7 @@ namespace Runic.Dotnet
                 StringBuilder version = new StringBuilder();
                 {
                     uint n = 0;
-                    for (; n < versionLength && reader.ReadByte() != 0; n++) { version.Append((char)reader.ReadByte()); }
+                    for (; n < versionLength; n++) { byte b = reader.ReadByte(); if (b == 0) { break; } version.Append((char)b); }
                     n++;
                     uint padding = 4 - (n % 4);
                     if (padding != 4) { for (uint i = 0; i < padding; i++) { reader.ReadByte(); } }
@@ -213,7 +213,7 @@ namespace Runic.Dotnet
                     StringBuilder streamName = new StringBuilder();
                     {
                         uint x = 0;
-                        for (; reader.ReadByte() != 0; x++) { streamName.Append((char)reader.ReadByte()); }
+                        for (; ; x++) { byte b = reader.ReadByte(); if (b == 0) { break; } streamName.Append((char)b); }
                         x++;
                         uint padding = 4 - (x % 4);
                         if (padding != 4) { for (uint p = 0; p < padding; p++) { reader.ReadByte(); } }
