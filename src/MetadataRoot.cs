@@ -182,6 +182,48 @@ namespace Runic.Dotnet
 
                 return new MetadataRoot(rva, version.ToString(), streams);
             }
+
+#if NET6_0_OR_GREATER
+            public static MetadataRoot Load(uint rva, System.IO.BinaryReader reader)
+#else
+            public static MetadataRoot Load(uint rva, System.IO.BinaryReader reader)
+#endif
+            {
+                uint magic = reader.ReadUInt32();
+                ushort major = reader.ReadUInt16();
+                ushort minor = reader.ReadUInt16();
+                reader.ReadUInt32();
+                uint versionLength = reader.ReadUInt32();
+                StringBuilder version = new StringBuilder();
+                {
+                    uint n = 0;
+                    for (; n < versionLength && reader.ReadByte() != 0; n++) { version.Append((char)reader.ReadByte()); }
+                    n++;
+                    uint padding = 4 - (n % 4);
+                    if (padding != 4) { for (uint i = 0; i < padding; i++) { reader.ReadByte(); } }
+                }
+                reader.ReadUInt16(); // Flags Reserved, always 0
+                ushort streamCount = reader.ReadUInt16();
+                Stream[] streams = new Stream[streamCount];
+                for (int n = 0; n < streamCount; n++)
+                {
+                    uint streamOffset = reader.ReadUInt32();
+                    uint streamLength = reader.ReadUInt32();
+                    uint streamRVA = rva + streamOffset;
+                    StringBuilder streamName = new StringBuilder();
+                    {
+                        uint x = 0;
+                        for (; reader.ReadByte() != 0; x++) { streamName.Append((char)reader.ReadByte()); }
+                        x++;
+                        uint padding = 4 - (x % 4);
+                        if (padding != 4) { for (uint p = 0; p < padding; p++) { reader.ReadByte(); } }
+                    }
+                    streams[n] = new Stream(streamRVA, streamLength, streamName.ToString());
+                }
+
+                return new MetadataRoot(rva, version.ToString(), streams);
+            }
+
             public void Save(System.IO.BinaryWriter writer)
             {
                 writer.Write((uint)0x424A5342); // Magic
